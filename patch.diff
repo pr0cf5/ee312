@@ -1,0 +1,267 @@
+diff -ruN lab3/code/template/Decoder.v lab4/code/template/Decoder.v
+--- lab3/code/template/Decoder.v	2019-10-16 20:07:02.000000000 -0700
++++ lab4/code/template/Decoder.v	2019-10-16 20:12:27.564540000 -0700
+@@ -54,4 +54,4 @@
+ 
+ 	assign halt = (instruction == 32'h8067) ? 1 : 0;
+ 
+-endmodule //
+\ No newline at end of file
++endmodule //
+diff -ruN lab3/code/template/Mem_Model.v lab4/code/template/Mem_Model.v
+--- lab3/code/template/Mem_Model.v	2019-10-16 18:07:10.000000000 -0700
++++ lab4/code/template/Mem_Model.v	2019-09-16 21:48:32.000000000 -0700
+@@ -13,18 +13,21 @@
+ 	reg		[31:0]		ram[0 : SIZE-1];
+ 	reg		[31:0]		temp;
+ 
+-	initial begin
++	initial
++	begin
+ 		if (ROMDATA != "")
+ 			$readmemh(ROMDATA, ram);
+ 	end
+ 
+ 	assign #1 DOUT = outline;
+ 
+-	always @ (posedge CLK) begin
+-		// Synchronous write
++	always @ (posedge CLK)
++	begin
+ 		if (~CSN)
+ 		begin
+-			if (~WEN)
++			if (WEN)
++				outline = ram[ADDR];
++			else
+ 			begin
+ 				temp = ram[ADDR];
+ 				if (BE[0]) temp[7:0] = DI[7:0];
+@@ -37,13 +40,4 @@
+ 		end
+ 	end
+ 
+-	always @ (*) begin
+-		// Asynchronous read
+-		if (~CSN)
+-		begin
+-			if (WEN)
+-				outline = ram[ADDR];
+-		end
+-	end
+-
+ endmodule
+diff -ruN lab3/code/template/REG_FILE.v lab4/code/template/REG_FILE.v
+--- lab3/code/template/REG_FILE.v	2019-10-16 18:07:10.000000000 -0700
++++ lab4/code/template/REG_FILE.v	2019-09-16 21:48:32.000000000 -0700
+@@ -12,7 +12,7 @@
+ );
+ 
+ 	//Declare the register that will store the data
+-	reg [DWIDTH-1:0] RF [MDEPTH-1:0];
++	reg [DWIDTH -1:0] RF [MDEPTH-1:0];
+ 
+ 	//Define asynchronous read
+ 	assign RD1 = RF[RA1];
+@@ -31,6 +31,7 @@
+ 			RF[0] <= 32'b0;
+ 			RF[2] <= 32'hF00;
+ 			RF[3] <= 32'h100;
++
+ 			RF[1] <= 32'b0;
+ 			RF[4] <= 32'b0;
+ 			RF[5] <= 32'b0;
+diff -ruN lab3/code/template/RISCV_CLKRST.v lab4/code/template/RISCV_CLKRST.v
+--- lab3/code/template/RISCV_CLKRST.v	2019-10-16 18:07:10.000000000 -0700
++++ lab4/code/template/RISCV_CLKRST.v	2019-09-16 21:48:30.000000000 -0700
+@@ -11,7 +11,7 @@
+   initial
+     begin
+       #5 clock_q <= 1'b1;
+-      #101 reset_n_q <= 1'b1;
++      #100 reset_n_q <= 1'b1;
+     end
+ 
+   always @(clock_q)
+diff -ruN lab3/code/template/RISCV_TOP.v lab4/code/template/RISCV_TOP.v
+--- lab3/code/template/RISCV_TOP.v	2019-10-16 19:55:04.000000000 -0700
++++ lab4/code/template/RISCV_TOP.v	2019-11-01 00:04:49.612201952 -0700
+@@ -24,28 +24,15 @@
+ 	input wire [31:0] RF_RD1,
+ 	input wire [31:0] RF_RD2,
+ 	output wire [31:0] RF_WD,
+-	output wire HALT,                   // if set, terminate program
+-	output reg [31:0] NUM_INST,         // number of instruction completed
+-	output wire [31:0] OUTPUT_PORT      // equal RF_WD this port is used for test
++	output wire HALT,
++	output reg [31:0] NUM_INST,
++	output wire [31:0] OUTPUT_PORT
+ 	);
+ 
+-	assign OUTPUT_PORT = RF_WD;
+-
+-	initial begin
+-		NUM_INST <= 0;
+-	end
+-
+-	// Only allow for NUM_INST
+-	always @ (negedge CLK) begin
+-		if (RSTn) NUM_INST <= NUM_INST + 1;
+-	end
+-
+ 	// assign I_MEM_CSN and D_MEM_CSN to invert RSTn
+ 	assign I_MEM_CSN = ~RSTn;
+ 	assign D_MEM_CSN = ~RSTn;
+ 
+-	//TODO
+-
+ 	// variables i made
+ 	reg [11:0] pc;
+ 	reg [11:0] nextpc;
+@@ -92,19 +79,32 @@
+ 	// halt handle
+ 	wire probablyHalt;
+ 
++	// state machine
++	reg [3:0] state;
++	wire [3:0] next_state;
++	wire PVSWriteEnable;
++
++	SM SM (.current_state(state), .opcode(opcode), .writeToReg(writeToReg), .writeToMem(writeToMem), .isRtype(isRtype), .isItype(isItype), .isStype(isStype), .isBtype(isBtype), .isUtype(isUtype), .isJtype(isJtype), .next_state(next_state), .PVSWriteEnable(PVSWriteEnable));
++
+ 	initial begin
+ 		pc = 0;
++		state = 0;
+ 	end
+ 
+ 	
+-	// synchronize with clock and change pc
++	// change PVS
+ 
+ 	always @(posedge CLK) begin
+ 		if (RSTn) begin
+-			pc <= nextpc;
+-			I_MEM_ADDR <= nextpc;
++			if (PVSWriteEnable) begin
++				pc <= nextpc;
++				I_MEM_ADDR <= nextpc;
++			end
++
++			state <= next_state;
+ 		end
+ 		else begin
++			state <= 0;
+ 			I_MEM_ADDR <= pc;
+ 		end
+ 	end
+@@ -224,7 +224,7 @@
+ 		end
+ 	end
+ 
+-	assign RF_WE = writeToReg;
++	assign RF_WE = writeToReg & PVSWriteEnable;
+ 
+ 	// ALU control
+ 	assign aluOp1 = RF_RD1;
+@@ -256,7 +256,7 @@
+ 
+ 	// D_MEM_DOUT is only used when opcode = 7'b0100011 (SW)
+ 	assign D_MEM_DOUT = RF_RD2;
+-	assign D_MEM_WEN = ~writeToMem;
++	assign D_MEM_WEN = ~(writeToMem & PVSWriteEnable);
+ 
+ 	// pc increment
+ 	// must sign extend for Jtype
+@@ -300,4 +300,6 @@
+ 	// halt handle
+ 	assign HALT = probablyHalt & (RF_RD1 == 32'hc);
+ 
++
++
+ endmodule //
+diff -ruN lab3/code/template/SM.v lab4/code/template/SM.v
+--- lab3/code/template/SM.v	1969-12-31 16:00:00.000000000 -0800
++++ lab4/code/template/SM.v	2019-10-31 23:53:06.055125916 -0700
+@@ -0,0 +1,82 @@
++// calculate the state based on the current state and emit signals to control components
++module SM (
++	input wire[3:0] current_state,
++	input wire[6:0] opcode,
++	input wire writeToReg,
++	input wire writeToMem,
++	input wire isRtype,
++	input wire isItype,
++	input wire isStype,
++	input wire isBtype,
++	input wire isUtype,
++	input wire isJtype,
++
++	output wire[3:0] next_state,
++	output wire PVSWriteEnable
++	);
++
++	reg[3:0] next_state_r;
++	reg PVSWriteEnable_r;
++
++	assign next_state = next_state_r;
++	assign PVSWriteEnable = PVSWriteEnable_r;
++
++	always @(*) begin
++		case (current_state) 
++			3'b000: begin
++				next_state_r = 3'b001;
++				PVSWriteEnable_r = 0;
++			end
++
++			3'b001: begin
++				// if jump instruction, emit PVSWriteEnable signal 
++				if (isJtype) begin
++					next_state_r = 3'b000;
++					PVSWriteEnable_r = 1;
++				end
++
++				else begin
++					next_state_r = 3'b010;
++					PVSWriteEnable_r = 0;
++				end
++			end
++
++			3'b010: begin
++				// if load or store instruction, go to the mem stage
++				if (opcode == 7'b0100011 || opcode == 7'b0000011) begin
++					next_state_r = 3'b011;
++					PVSWriteEnable_r = 0;
++				end
++
++				// else go to the writeback stage
++				else begin
++					next_state_r = 3'b100;
++					PVSWriteEnable_r = 0;
++				end
++			end
++
++			3'b011: begin
++				// if store instruction, emit PVSWriteEnable and go to state 0
++				if (opcode == 7'b0100011) begin
++					next_state_r = 3'b000;
++					PVSWriteEnable_r = 1;
++				end
++
++				// for loads, go to WB stage
++				else begin
++					next_state_r = 3'b100;
++					PVSWriteEnable_r = 0;
++				end
++			end
++
++			3'b100: begin
++				next_state_r = 3'b000;
++				PVSWriteEnable_r = 1;
++			end
++
++
++		endcase
++	end
++	
++
++endmodule //

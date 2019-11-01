@@ -23,8 +23,7 @@ module REG_FILE #(
 	begin
 		if(WE && (WA != {AWIDTH{1'b0}}))
 		begin
-			//$display("write to register %0x<=%0x", WA, WD);
-        		//RF[WA] <= WD;
+        		RF[WA] <= WD;
     		end
 
 		else if (~RSTn)
