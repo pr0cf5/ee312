@@ -17,6 +17,8 @@ module branchALU (
 			3'b110: branchTaken = src1 < src2;
 			3'b111: branchTaken = src1 >= src2;
 		endcase
+
+		$display("branchTaken: %0x", branchTaken);
 		
 	end
 endmodule 

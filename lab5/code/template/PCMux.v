@@ -12,10 +12,22 @@ module pcMux (
 
 	always @(*) begin
 		case (pcSrc)
-			3'b000: nextPc_r = nextPcInc4;
-			3'b001: nextPc_r = nextPcBranch;
-			3'b110: nextPc_r = nextPcJAL;
-			3'b100: nextPc_r = nextPcJALR;
+			3'b000: begin
+				nextPc_r = nextPcInc4;
+				//$display("default");
+			end
+			3'b001: begin
+				nextPc_r = nextPcBranch;
+				//$display("branch");
+			end
+			3'b110: begin
+				nextPc_r = nextPcJAL;
+				//$display("JUMP IMM");
+			end
+			3'b100: begin
+				nextPc_r = nextPcJALR;
+				//$display("JUMP REG");
+			end
 
 		endcase
 	end

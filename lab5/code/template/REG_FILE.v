@@ -19,7 +19,7 @@ module REG_FILE #(
 	assign RD2 = RF[RA2];
 
 	//Define synchronous write
-	always @(negedge CLK)
+	always @(posedge CLK)
 	begin
 		if(WE && (WA != {AWIDTH{1'b0}}))
 		begin
