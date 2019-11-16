@@ -137,7 +137,7 @@ module RISCV_TOP (
 	end
 
 	always @(*) begin
-		if (BtypeImm[20] == 1) begin
+		if (JtypeImm[20] == 1) begin
 			signExtendedJtypeImm = {11'b11111111111, JtypeImm};
 		end
 		else begin

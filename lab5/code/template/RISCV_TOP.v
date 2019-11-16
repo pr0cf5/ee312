@@ -24,15 +24,27 @@ module RISCV_TOP (
 	input wire [31:0] RF_RD1,
 	input wire [31:0] RF_RD2,
 	output wire [31:0] RF_WD,
-	output wire HALT,
-	output reg [31:0] NUM_INST,
-	output wire [31:0] OUTPUT_PORT
+	output wire HALT,                   // if set, terminate program
+	output reg [31:0] NUM_INST,         // number of instruction completed
+	output wire [31:0] OUTPUT_PORT      // equal RF_WD this port is used for test
 	);
 
-	// assign I_MEM_CSN and D_MEM_CSN to invert RSTn
 	assign OUTPUT_PORT = RF_WD;
+
+	initial begin
+		NUM_INST <= 0;
+	end
+
+	// Only allow for NUM_INST
+	always @ (negedge CLK) begin
+		if (RSTn) NUM_INST <= NUM_INST + 1;
+	end
+
+	// assign I_MEM_CSN and D_MEM_CSN to invert RSTn
 	assign I_MEM_CSN = ~RSTn;
 	assign D_MEM_CSN = ~RSTn;
+
+	//TODO
 
 	// variables i made
 	reg [11:0] pc;
@@ -80,47 +92,28 @@ module RISCV_TOP (
 	// halt handle
 	wire probablyHalt;
 
-	// state machine
-	reg [3:0] state;
-	wire [3:0] next_state;
-	wire PVSWriteEnable;
-
-	SM SM (.current_state(state), .opcode(opcode), .writeToReg(writeToReg), .writeToMem(writeToMem), .isRtype(isRtype), .isItype(isItype), .isStype(isStype), .isBtype(isBtype), .isUtype(isUtype), .isJtype(isJtype), .next_state(next_state), .PVSWriteEnable(PVSWriteEnable));
-
 	initial begin
 		pc = 0;
-		state = 0;
 	end
 
-	initial begin
-		NUM_INST <= 0;
-	end
-
-	always @ (negedge CLK) begin
-		if (RSTn && PVSWriteEnable) begin
-			NUM_INST <= NUM_INST + 1;
-		end
-	end
-
-	// change PVS
+	
+	// synchronize with clock and change pc
 
 	always @(posedge CLK) begin
 		if (RSTn) begin
-			if (PVSWriteEnable) begin
-				pc <= nextpc;
-				I_MEM_ADDR <= nextpc;
-			end
-			state <= next_state;
+			pc <= nextpc;
+			I_MEM_ADDR <= nextpc;
 		end
 		else begin
-			state <= 0;
 			I_MEM_ADDR <= pc;
 		end
 	end
 
+	// pc Mux control
+	wire [2:0] pcSrc;
 	
 	// decode instruction
-	Decoder decoder(.instruction(I_MEM_DI), .opcode(opcode), .rs1(rs1), .rs2(rs2), .rd(rd), .writeToReg(writeToReg), .writeToMem(writeToMem), .isRtype(isRtype), .isItype(isItype), .isStype(isStype), .isBtype(isBtype), .isUtype(isUtype), .isJtype(isJtype), .isALU (isALU), .ItypeImm(ItypeImm), .StypeImm(StypeImm), .BtypeImm(BtypeImm), .UtypeImm(UtypeImm), .JtypeImm(JtypeImm), .funct3(funct3), .funct7(funct7), .halt(probablyHalt));
+	Decoder decoder(.instruction(I_MEM_DI), .opcode(opcode), .rs1(rs1), .rs2(rs2), .rd(rd), .writeToReg(writeToReg), .writeToMem(writeToMem), .isRtype(isRtype), .isItype(isItype), .isStype(isStype), .isBtype(isBtype), .isUtype(isUtype), .isJtype(isJtype), .isALU (isALU), .ItypeImm(ItypeImm), .StypeImm(StypeImm), .BtypeImm(BtypeImm), .UtypeImm(UtypeImm), .JtypeImm(JtypeImm), .funct3(funct3), .funct7(funct7), .halt(probablyHalt), .pcSrc(pcSrc));
 
 	ALU alu(.opType(funct3), .aux(funct7), .useAux(isRtype), .inUse(isALU), .in1(aluOp1), .in2(aluOp2), .out(aluResult));
 	SignExtender SE(.in(imm), .out(signExtendedImm));
@@ -132,10 +125,11 @@ module RISCV_TOP (
 
 	reg [31:0] RF_WD_r;
 	assign RF_WD = RF_WD_r;
-	reg branchTaken;
+	wire branchTaken;
 	reg [31:0] signExtendedBtypeImm;
 	reg [31:0] signExtendedJtypeImm;
 
+	// sign extender for btype
 	always @(*) begin
 		if (BtypeImm[12] == 1) begin
 			signExtendedBtypeImm = {19'b1111111111111111111, BtypeImm};
@@ -145,6 +139,7 @@ module RISCV_TOP (
 		end
 	end
 
+	// sign extender for jtype
 	always @(*) begin
 		if (JtypeImm[20] == 1) begin
 			signExtendedJtypeImm = {11'b11111111111, JtypeImm};
@@ -187,7 +182,7 @@ module RISCV_TOP (
 			RF_WD_r = UtypeImm + pc;
 		end
 
-		// load instruction acts differently based on the addressing mode
+		// load instruction.acts differently based on the addressing mode
 
 		else if (opcode == 7'b0000011) begin
 			// different based on the mode
@@ -233,7 +228,7 @@ module RISCV_TOP (
 		end
 	end
 
-	assign RF_WE = writeToReg & PVSWriteEnable;
+	assign RF_WE = writeToReg;
 
 	// ALU control
 	assign aluOp1 = RF_RD1;
@@ -265,50 +260,24 @@ module RISCV_TOP (
 
 	// D_MEM_DOUT is only used when opcode = 7'b0100011 (SW)
 	assign D_MEM_DOUT = RF_RD2;
-	assign D_MEM_WEN = ~(writeToMem & PVSWriteEnable);
+	assign D_MEM_WEN = ~writeToMem;
 
-	// pc increment
-	// must sign extend for Jtype
-	always @(*) begin
-		if (opcode == 7'b1101111) begin
-			nextpc = pc + signExtendedJtypeImm;
-		end
-			
-		else if (opcode == 7'b1100111) begin
-			nextpc = (signExtendedImm + RF_RD1) & 'hfffffffe;
-		end
+	// pc change using pcMux
+	wire [31:0] nextPcJAL;
+	wire [31:0] nextPcJALR;
+	wire [31:0] nextPcBranch;
+	wire [31:0] nextPcInc4;
 
-		else if (opcode == 7'b1100011) begin
-			if (branchTaken) begin
-				nextpc = pc + signExtendedBtypeImm;
-			end
-			else begin
-				nextpc = pc + 4;
-			end
-		end
+	// the four 'candidates' for the next pc
 
-		else begin
-			nextpc = pc + 4;
-		end
-	end
+	adder32 pcAdder1(.src1({20'b0, pc}), .src2(4), .out(nextPcInc4));
+	adder32 pcAdder2(.src1(RF_RD1), .src2(signExtendedImm), .out(nextPcJALR));
+	adder32 pcAdder3(.src1({20'b0, pc}), .src2(signExtendedJtypeImm), .out(nextPcJAL));
+	adder32 pcAdder4(.src1({20'b0, pc}), .src2(signExtendedBtypeImm), .out(nextPcBranch));
 
-	// calculate branchTaken
-	always @(*) begin
-		if (isBtype) begin
-			case (funct3) 
-				3'b000: branchTaken = RF_RD1 == RF_RD2;
-				3'b001: branchTaken = RF_RD1 != RF_RD2;
-				3'b100: branchTaken = $signed(RF_RD1) < $signed(RF_RD2);
-				3'b101: branchTaken = $signed(RF_RD1) >= $signed(RF_RD2);
-				3'b110: branchTaken = RF_RD1 < RF_RD2;
-				3'b111: branchTaken = RF_RD1 >= RF_RD2;
-			endcase
-		end
-	end
+	branchALU branchALU(.src1(RF_RD1), .src2(RF_RD2), .funct3(funct3), .out(branchTaken));
 
 	// halt handle
-	assign HALT = probablyHalt & (RF_RD1 == 32'hc) & PVSWriteEnable;
-
-
+	assign HALT = probablyHalt & (RF_RD1 == 32'hc);
 
 endmodule //

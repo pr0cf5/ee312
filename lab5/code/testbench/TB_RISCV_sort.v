@@ -64,7 +64,7 @@ module TB_RISCV ();
 
 	//I-Memory
 	SP_SRAM #(
-		.ROMDATA ("/home/procfs/ee312/lab3/code/testcase/hex/sort.hex"), //Initialize I-Memory
+		.ROMDATA ("/home/procfs/ee312/lab5/code/testcase/hex/sort.hex"), //Initialize I-Memory
 		.AWIDTH  (10),
 		.SIZE    (1024)
 	) i_mem1 (
@@ -176,7 +176,6 @@ module TB_RISCV ();
 				if ((NUM_INST==TestNumInst[i]) & (TestPassed[i]==0)) begin
 					if (OUTPUT_PORT == TestAns[i]) begin
 						TestPassed[i] <= 1'b1;
-						$display("Test #%s passed", TestID[i]);
 					end
 					else begin
 						TestPassed[i] <= 1'b0;
