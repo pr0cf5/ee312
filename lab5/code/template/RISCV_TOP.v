@@ -244,9 +244,9 @@ module RISCV_TOP (
 	adder32 pcAdder4(.src1({20'b0, pc}), .src2(signExtendedBtypeImm), .out(nextPcBranch));
 
 	// pc Mux
-	pcMux pcMux(.nextPcInc4(nextPcInc4), .nextPcJALR(nextPcJALR), .nextPcJAL(nextPcJAL), .nextPcBranch(nextPcBranch), .pcSrc({pcSrc[2:1], branchTaken & isBtype}), .nextPc(nextpc));
+	pcMux pcMux(.nextPcInc4(nextPcInc4), .nextPcJALR(nextPcJALR), .nextPcJAL(nextPcJAL), .nextPcBranch(nextPcBranch), .pcSrc({pcSrc[2:1], branchTaken}), .nextPc(nextpc));
 
-	branchALU branchALU(.src1(RF_RD1), .src2(RF_RD2), .funct3(funct3), .out(branchTaken));
+	branchALU branchALU(.src1(RF_RD1), .src2(RF_RD2), .funct3(funct3), .isBtype(isBtype), .out(branchTaken));
 
 	// halt handle
 	assign HALT = probablyHalt & (RF_RD1 == 32'hc);
