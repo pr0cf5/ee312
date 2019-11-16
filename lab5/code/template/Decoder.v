@@ -63,22 +63,22 @@ module Decoder (
 
 			// JAL 
 			7'b1101111: begin
-				pcSrc_r = 2'b11;
+				pcSrc_r = 3'b110;
 			end
 
 			// JALR
 			7'b1100111: begin
-				pcSrc_r = 2'b10;
+				pcSrc_r = 3'b100;
 			end
 
 			// Branch
 			7'b1100011: begin
-				pcSrc_r = 2'b01;
+				pcSrc_r = 3'b001;
 			end
 
 			// all else
 			default: begin
-				pcSrc_r = 2'b00;
+				pcSrc_r = 3'b000;
 			end
 		endcase
 	end

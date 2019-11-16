@@ -48,7 +48,7 @@ module RISCV_TOP (
 
 	// variables i made
 	reg [11:0] pc;
-	reg [11:0] nextpc;
+	wire [11:0] nextpc;
 
 	wire [6:0] opcode;
 	wire [2:0] funct3;
@@ -116,7 +116,13 @@ module RISCV_TOP (
 	Decoder decoder(.instruction(I_MEM_DI), .opcode(opcode), .rs1(rs1), .rs2(rs2), .rd(rd), .writeToReg(writeToReg), .writeToMem(writeToMem), .isRtype(isRtype), .isItype(isItype), .isStype(isStype), .isBtype(isBtype), .isUtype(isUtype), .isJtype(isJtype), .isALU (isALU), .ItypeImm(ItypeImm), .StypeImm(StypeImm), .BtypeImm(BtypeImm), .UtypeImm(UtypeImm), .JtypeImm(JtypeImm), .funct3(funct3), .funct7(funct7), .halt(probablyHalt), .pcSrc(pcSrc));
 
 	ALU alu(.opType(funct3), .aux(funct7), .useAux(isRtype), .inUse(isALU), .in1(aluOp1), .in2(aluOp2), .out(aluResult));
-	SignExtender SE(.in(imm), .out(signExtendedImm));
+
+	wire [31:0] signExtendedBtypeImm;
+	wire [31:0] signExtendedJtypeImm;
+
+	SignExtender12 SE1(.in(imm), .out(signExtendedImm));
+	SignExtender13 SE2(.in(BtypeImm), .out(signExtendedBtypeImm));
+	SignExtender21 SE3(.in(JtypeImm), .out(signExtendedJtypeImm));
 
 	// register file control
 	assign RF_RA1 = rs1;
@@ -126,29 +132,6 @@ module RISCV_TOP (
 	reg [31:0] RF_WD_r;
 	assign RF_WD = RF_WD_r;
 	wire branchTaken;
-	reg [31:0] signExtendedBtypeImm;
-	reg [31:0] signExtendedJtypeImm;
-
-	// sign extender for btype
-	always @(*) begin
-		if (BtypeImm[12] == 1) begin
-			signExtendedBtypeImm = {19'b1111111111111111111, BtypeImm};
-		end
-		else begin
-			signExtendedBtypeImm = BtypeImm;
-		end
-	end
-
-	// sign extender for jtype
-	always @(*) begin
-		if (JtypeImm[20] == 1) begin
-			signExtendedJtypeImm = {11'b11111111111, JtypeImm};
-		end
-		else begin
-			signExtendedJtypeImm = JtypeImm;
-		end
-	end
-
 
 	always @(*) begin
 
@@ -237,24 +220,9 @@ module RISCV_TOP (
 	// memory control
 	assign imm = isItype ? ItypeImm : isStype ? StypeImm : 0;
 
-	// this value is different based on what addressing mode
-	reg [3:0] D_MEM_BE_r;
-	assign D_MEM_BE = D_MEM_BE_r;
-
-	always @(*) begin
-		if (funct3 == 3'b010) begin
-			D_MEM_BE_r = 4'b1111;
-		end
-
-		else if (funct3 == 3'b100 || funct3 == 3'b000) begin
-			D_MEM_BE_r = 4'b0001;
-		end
-
-		else if (funct3 == 3'b101 || funct3 == 3'b001) begin
-			D_MEM_BE_r = 4'b0011;
-		end
-	end
-
+	// set addressing mode
+	setAddressMode SAM(.funct3(funct3), .mode(D_MEM_BE));
+	
 	assign EA = RF_RD1 + signExtendedImm;
 	assign D_MEM_ADDR = EA[31:2];
 
@@ -274,6 +242,9 @@ module RISCV_TOP (
 	adder32 pcAdder2(.src1(RF_RD1), .src2(signExtendedImm), .out(nextPcJALR));
 	adder32 pcAdder3(.src1({20'b0, pc}), .src2(signExtendedJtypeImm), .out(nextPcJAL));
 	adder32 pcAdder4(.src1({20'b0, pc}), .src2(signExtendedBtypeImm), .out(nextPcBranch));
+
+	// pc Mux
+	pcMux pcMux(.nextPcInc4(nextPcInc4), .nextPcJALR(nextPcJALR), .nextPcJAL(nextPcJAL), .nextPcBranch(nextPcBranch), .pcSrc(pcSrc & branchTaken), .nextPc(nextpc));
 
 	branchALU branchALU(.src1(RF_RD1), .src2(RF_RD2), .funct3(funct3), .out(branchTaken));
 
