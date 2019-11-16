@@ -30,6 +30,7 @@ module RISCV_TOP (
 	);
 
 	// assign I_MEM_CSN and D_MEM_CSN to invert RSTn
+	assign OUTPUT_PORT = RF_WD;
 	assign I_MEM_CSN = ~RSTn;
 	assign D_MEM_CSN = ~RSTn;
 
@@ -91,7 +92,16 @@ module RISCV_TOP (
 		state = 0;
 	end
 
-	
+	initial begin
+		NUM_INST <= 0;
+	end
+
+	always @ (negedge CLK) begin
+		if (RSTn && PVSWriteEnable) begin
+			NUM_INST <= NUM_INST + 1;
+		end
+	end
+
 	// change PVS
 
 	always @(posedge CLK) begin
@@ -100,7 +110,6 @@ module RISCV_TOP (
 				pc <= nextpc;
 				I_MEM_ADDR <= nextpc;
 			end
-
 			state <= next_state;
 		end
 		else begin
@@ -178,7 +187,7 @@ module RISCV_TOP (
 			RF_WD_r = UtypeImm + pc;
 		end
 
-		// load instruction.acts differently based on the addressing mode
+		// load instruction acts differently based on the addressing mode
 
 		else if (opcode == 7'b0000011) begin
 			// different based on the mode
@@ -298,7 +307,7 @@ module RISCV_TOP (
 	end
 
 	// halt handle
-	assign HALT = probablyHalt & (RF_RD1 == 32'hc);
+	assign HALT = probablyHalt & (RF_RD1 == 32'hc) & PVSWriteEnable;
 
 
 

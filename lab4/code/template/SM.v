@@ -29,16 +29,8 @@ module SM (
 			end
 
 			3'b001: begin
-				// if jump instruction, emit PVSWriteEnable signal 
-				if (isJtype) begin
-					next_state_r = 3'b000;
-					PVSWriteEnable_r = 1;
-				end
-
-				else begin
-					next_state_r = 3'b010;
-					PVSWriteEnable_r = 0;
-				end
+				next_state_r = 3'b010;
+				PVSWriteEnable_r = 0;
 			end
 
 			3'b010: begin
@@ -46,6 +38,12 @@ module SM (
 				if (opcode == 7'b0100011 || opcode == 7'b0000011) begin
 					next_state_r = 3'b011;
 					PVSWriteEnable_r = 0;
+				end
+
+				// if j type instruction, go to IF stage
+				if (isJtype) begin
+					next_state_r = 3'b000;
+					PVSWriteEnable_r = 1;
 				end
 
 				// else go to the writeback stage
