@@ -149,6 +149,7 @@ module TB_RISCV ();
 			for(i=0; i<`NUM_TEST; i=i+1) begin
 				if ((NUM_INST==TestNumInst[i]) & (TestPassed[i]==0)) begin
 					if (OUTPUT_PORT == TestAns[i]) begin
+						$display("Test #%s passed", TestID[i]);
 						TestPassed[i] <= 1'b1;
 					end
 					else begin

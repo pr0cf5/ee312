@@ -36,10 +36,11 @@ module RISCV_TOP (
 	end
 
 	// Only allow for NUM_INST
+	
 	always @ (negedge CLK) begin
 		if (RSTn) NUM_INST <= NUM_INST + 1;
 	end
-
+	
 	// assign I_MEM_CSN and D_MEM_CSN to invert RSTn
 	assign I_MEM_CSN = ~RSTn;
 	assign D_MEM_CSN = ~RSTn;
@@ -65,8 +66,6 @@ module RISCV_TOP (
 	wire writeToReg;
 	wire writeToMem;
 
-	// there are 12bit immediates and 20bit immediates, so to include them both we make it 20bit size
-
 	wire [4:0] rs1;
 	wire [4:0] rs2;
 	wire [4:0] rd;
@@ -79,15 +78,9 @@ module RISCV_TOP (
 	wire[20:0] JtypeImm;
 
 	wire[11:0] imm;
-	wire[31:0] signExtendedImm;
 
-	// effective address
-	wire [31:0] EA;
-
-	// ALU
-	wire [31:0] aluOp1;
-	wire [31:0] aluOp2;
-	wire [31:0] aluResult;
+	wire [2:0] aluOp1;
+	wire [2:0] aluOp2;
 
 	// halt handle
 	wire probablyHalt;
@@ -111,124 +104,12 @@ module RISCV_TOP (
 
 	// pc Mux control
 	wire [2:0] pcSrc;
-	
-	// decode instruction
-	Decoder decoder(.instruction(I_MEM_DI), .opcode(opcode), .rs1(rs1), .rs2(rs2), .rd(rd), .writeToReg(writeToReg), .writeToMem(writeToMem), .isRtype(isRtype), .isItype(isItype), .isStype(isStype), .isBtype(isBtype), .isUtype(isUtype), .isJtype(isJtype), .isALU (isALU), .ItypeImm(ItypeImm), .StypeImm(StypeImm), .BtypeImm(BtypeImm), .UtypeImm(UtypeImm), .JtypeImm(JtypeImm), .funct3(funct3), .funct7(funct7), .halt(probablyHalt), .pcSrc(pcSrc));
-
-	ALU alu(.opType(funct3), .aux(funct7), .useAux(isRtype), .inUse(isALU), .in1(aluOp1), .in2(aluOp2), .out(aluResult));
-
-	wire [31:0] signExtendedBtypeImm;
-	wire [31:0] signExtendedJtypeImm;
-
-	SignExtender12 SE1(.in(imm), .out(signExtendedImm));
-	SignExtender13 SE2(.in(BtypeImm), .out(signExtendedBtypeImm));
-	SignExtender21 SE3(.in(JtypeImm), .out(signExtendedJtypeImm));
-
-	// register file control
-	assign RF_RA1 = rs1;
-	assign RF_RA2 = rs2;
-	assign RF_WA1 = rd;
 
 	reg [31:0] RF_WD_r;
 	assign RF_WD = RF_WD_r;
 	wire branchTaken;
 
-	always @(*) begin
-
-		// alu instruction
-		if (isALU) begin
-			RF_WD_r = aluResult;
-		end
-
-		// store instruction
-		else if (opcode == 7'b0100011) begin
-			RF_WD_r = D_MEM_ADDR << 2;
-		end
-
-		// jump
-		else if (opcode == 7'b1101111 || opcode == 7'b1100111) begin
-			RF_WD_r = pc + 4;
-		end
-
-		// branch
-		else if (opcode == 7'b1100011) begin
-			RF_WD_r = branchTaken;
-		end
-
-		// u type instruction - LUI
-		else if (opcode == 7'b110111) begin
-			RF_WD_r = UtypeImm;
-		end
-
-		// u type instruction - AUIPC
-		else if (opcode == 7'b10111) begin
-			RF_WD_r = UtypeImm + pc;
-		end
-
-		// load instruction.acts differently based on the addressing mode
-
-		else if (opcode == 7'b0000011) begin
-			// different based on the mode
-			case (funct3)
-				// LB
-				3'b000: begin
-					if (D_MEM_DI[7]) begin
-						RF_WD_r = {24'b111111111111111111111111, D_MEM_DI[7:0]};
-					end
-
-					else begin
-						RF_WD_r = {24'b000000000000000000000000, D_MEM_DI[7:0]};
-					end
-				end
-
-				// LH
-				3'b001: begin
-					if (D_MEM_DI[15]) begin
-						RF_WD_r = {16'b1111111111111111, D_MEM_DI[15:0]};
-					end
-
-					else begin
-						RF_WD_r = {16'b0000000000000000, D_MEM_DI[15:0]};
-					end
-				end
-
-				// LW
-				3'b010: begin
-					RF_WD_r = D_MEM_DI;
-				end
-
-				// LBU
-				3'b100: begin
-					RF_WD_r = {24'b000000000000000000000000, D_MEM_DI[7:0]};
-				end
-
-
-				// LHU
-				3'b101: begin
-					RF_WD_r = {16'b0000000000000000, D_MEM_DI[15:0]};
-				end
-			endcase
-		end
-	end
-
-	assign RF_WE = writeToReg;
-
-	// ALU control
-	assign aluOp1 = RF_RD1;
-	assign aluOp2 = isItype ? signExtendedImm : RF_RD2;
-
-	// memory control
-	assign imm = isItype ? ItypeImm : isStype ? StypeImm : 0;
-
-	// set addressing mode
-	setAddressMode SAM(.funct3(funct3), .mode(D_MEM_BE));
-	
-	assign EA = RF_RD1 + signExtendedImm;
-	assign D_MEM_ADDR = EA[31:2];
-
-	// D_MEM_DOUT is only used when opcode = 7'b0100011 (SW)
-	assign D_MEM_DOUT = RF_RD2;
-	assign D_MEM_WEN = ~writeToMem;
+	/* IF Stage */
 
 	// pc change using pcMux
 	wire [31:0] nextPcJAL;
@@ -236,19 +117,162 @@ module RISCV_TOP (
 	wire [31:0] nextPcBranch;
 	wire [31:0] nextPcInc4;
 
-	// the four 'candidates' for the next pc
+	// The four 'candidates' for the next pc
 
 	adder32 pcAdder1(.src1({20'b0, pc}), .src2(4), .out(nextPcInc4));
-	adder32 pcAdder2(.src1(RF_RD1), .src2(signExtendedImm), .out(nextPcJALR));
-	adder32 pcAdder3(.src1({20'b0, pc}), .src2(signExtendedJtypeImm), .out(nextPcJAL));
-	adder32 pcAdder4(.src1({20'b0, pc}), .src2(signExtendedBtypeImm), .out(nextPcBranch));
 
 	// pc Mux
-	pcMux pcMux(.nextPcInc4(nextPcInc4), .nextPcJALR(nextPcJALR), .nextPcJAL(nextPcJAL), .nextPcBranch(nextPcBranch), .pcSrc({pcSrc[2:1], branchTaken}), .nextPc(nextpc));
+	pcMux pcMux(.nextPcInc4(nextPcInc4), .nextPcJALR(nextPcJALR), .nextPcJAL(nextPcJAL), .nextPcBranch(nextPcBranch), .pcSrc({pcSrc[2:1], 1'b0}), .nextPc(nextpc));
 
-	branchALU branchALU(.src1(RF_RD1), .src2(RF_RD2), .funct3(funct3), .isBtype(isBtype), .out(branchTaken));
+	// Decode current instruction
+	Decoder decoder(.instruction(I_MEM_DI), .opcode(opcode), .rs1(rs1), .rs2(rs2), .rd(rd), .writeToReg(writeToReg), .writeToMem(writeToMem), .isRtype(isRtype), .isItype(isItype), .isStype(isStype), .isBtype(isBtype), .isUtype(isUtype), .isJtype(isJtype), .isALU (isALU), .ItypeImm(ItypeImm), .StypeImm(StypeImm), .BtypeImm(BtypeImm), .UtypeImm(UtypeImm), .JtypeImm(JtypeImm), .funct3(funct3), .funct7(funct7), .halt(probablyHalt), .pcSrc(pcSrc));
 
-	// halt handle
+	// commit to IF ID register
+
+	wire[2:0] opType;
+	wire[2:0] opType_id;
+	wire[4:0] rd_id;
+	wire[4:0] rs1_id;
+	wire[4:0] rs2_id;
+	wire[2:0] aluOp1_id;
+	wire[2:0] aluOp2_id;
+	wire[11:0] imm_id;
+	wire isBtype_id;
+	wire isItype_id;
+	wire isRtype_id;
+	wire isStype_id;
+	wire[6:0] opcode_id;
+	wire[6:0] funct7_id;
+
+	assign imm = isItype ? ItypeImm : isStype ? StypeImm : 0;
+	assign opType = isStype ? 3'b000 : funct3;
+	assign aluOp1 = 3'b100;
+	assign aluOp2 = (isItype || isStype) ? 3'b000 : 3'b100;
+
+	// IF_ID pipeline register commit
+	IF_ID PR1(.CLK(CLK), .opType_i(opType), .rd_i(rd), .rs1_i(rs1), .rs2_i(rs2), .aluOp1_i(aluOp1), .aluOp2_i(aluOp2), .imm_i(imm), .isBtype_i(isBtype), .isItype_i(isItype), .isRtype_i(isRtype), .isStype_i(isStype), .opcode_i(opcode), .funct7_i(funct7), .opType_o(opType_id), .rd_o(rd_id), .rs1_o(rs1_id), .rs2_o(rs2_id), .aluOp1_o(aluOp1_id), .aluOp2_o(aluOp2_id), .imm_o(imm_id), .isBtype_o(isBtype_id), .isItype_o(isItype_id), .isRtype_o(isRtype_id), .isStype_o(isStype_id), .opcode_o(opcode_id), .funct7_o(funct7_id));
+
+	// register file control
+	assign RF_RA1 = rs1_id;
+	assign RF_RA2 = rs2_id;
+
+	wire[31:0] regVal1_ex;
+	wire[31:0] regVal2_ex;
+	wire[2:0] opType_ex;
+	wire[4:0] rd_ex;
+	wire[4:0] rs1_ex;
+	wire[4:0] rs2_ex;
+	wire[2:0] aluOp1_ex;
+	wire[2:0] aluOp2_ex;
+	wire[11:0] imm_ex;
+	wire isBtype_ex;
+	wire isItype_ex;
+	wire isRtype_ex;
+	wire isStype_ex;
+	wire[6:0] opcode_ex;
+	wire[6:0] funct7_ex;
+
+	// ID_EX pipeline register commit
+	ID_EX PR2(.CLK(CLK), .regVal1_i(RF_RD1), .regVal2_i(RF_RD2), .opType_i(opType_id), .rd_i(rd_id), .rs1_i(rs1_id), .rs2_i(rs2_id), .aluOp1_i(aluOp1_id), .aluOp2_i(aluOp2_id), .imm_i(imm_id), .isBtype_i(isBtype_id), .isItype_i(isItype_id), .isRtype_i(isRtype_id), .isStype_i(isStype_id), .opcode_i(opcode_id), .funct7_i(funct7_id), .regVal1_o(regVal1_ex), .regVal2_o(regVal2_ex), .opType_o(opType_ex), .rd_o(rd_ex), .rs1_o(rs1_ex), .rs2_o(rs2_ex), .aluOp1_o(aluOp1_ex), .aluOp2_o(aluOp2_ex), .imm_o(imm_ex), .isBtype_o(isBtype_ex), .isItype_o(isItype_ex), .isRtype_o(isRtype_ex), .isStype_o(isStype_ex), .opcode_o(opcode_ex), .funct7_o(funct7_ex));
+
+	// handle halt
 	assign HALT = probablyHalt & (RF_RD1 == 32'hc);
+
+	/* EX Stage */
+
+	// ALU control
+	wire[31:0] aluIn1;
+	wire[31:0] aluIn2;
+	wire[31:0] baluIn1;
+	wire[31:0] baluIn2;
+	wire[31:0] aluResult;
+	wire baluResult;
+
+	// Sign Extension
+	wire[31:0] signExtendedImm;
+	wire[31:0] signExtendedBtypeImm;
+	wire[31:0] signExtendedJtypeImm;
+
+	SignExtender12 SE1(.in(imm_ex), .out(signExtendedImm));
+	SignExtender13 SE2(.in(BtypeImm), .out(signExtendedBtypeImm));
+	SignExtender21 SE3(.in(JtypeImm), .out(signExtendedJtypeImm));
+
+	ALUSrc1Mux ALUSrc1(.sig(aluOp1_ex), .regValue(regVal1_ex), .forwardMEM(32'b0), .forwardWB(32'b0), .out(aluIn1));
+	ALUSrc2Mux ALUSrc2(.sig(aluOp2_ex), .regValue(regVal2_ex), .imm(signExtendedImm), .forwardMEM(32'b0), .forwardWB(32'b0), .out(aluIn2));
+	BALUSrcMux BALUSrc1(.sig(3'b000), .regValue(regVal1_ex), .forwardMEM(32'b0), .forwardWB(32'b0), .out(baluIn1));
+	BALUSrcMux BALUSrc2(.sig(3'b000), .regValue(regVal2_ex), .forwardMEM(32'b0), .forwardWB(32'b0), .out(baluIn2));
+
+	ALU alu(.opType(opType_ex), .aux(funct7_ex), .useAux(isRtype_ex), .in1(aluIn1), .in2(aluIn2), .out(aluResult));
+	branchALU branchALU(.src1(baluIn1), .src2(baluIn2), .funct3(opType_ex), .isBtype(isBtype_ex), .out(baluResult));
+
+	wire[31:0] aluResult_mem;
+	wire[4:0] rd_mem;
+	wire[4:0] rs1_mem;
+	wire[4:0] rs2_mem;
+	wire isBtype_mem;
+	wire isItype_mem;
+	wire isRtype_mem;
+	wire isStype_mem;
+	wire[6:0] opcode_mem;
+	wire[31:0] memWriteValue_mem;
+
+	// EX/MEM pipeline register commit
+	EX_MEM PR3(.CLK(CLK), .aluResult_i(aluResult), .rd_i(rd_ex), .rs1_i(rs1_ex), .rs2_i(rs2_ex), .isBtype_i(isBtype_ex), .isItype_i(isItype_ex), .isRtype_i(isRtype_ex), .isStype_i(isStype_ex), .opcode_i(opcode_ex), .memWriteValue_i(regVal2_ex), .aluResult_o(aluResult_mem), .rd_o(rd_mem), .rs1_o(rs1_mem), .rs2_o(rs2_mem), .isBtype_o(isBtype_mem), .isItype_o(isItype_mem), .isRtype_o(isRtype_mem), .isStype_o(isStype_mem), .opcode_o(opcode_mem), .memWriteValue_o(memWriteValue_mem));
+
+	/* MEM stage */
+	assign D_MEM_ADDR = (aluResult[11:2] << 2) & 'h3fff;
+	assign D_MEM_WEN = ~isStype;
+	assign D_MEM_DOUT = memWriteValue_mem;
+
+	wire[31:0] aluResult_wb;
+	wire[4:0] rd_wb;
+	wire[4:0] rs1_wb;
+	wire[4:0] rs2_wb;
+	wire isBtype_wb;
+	wire isItype_wb;
+	wire isRtype_wb;
+	wire isStype_wb;
+	wire[6:0] opcode_wb;
+	wire[31:0] memWriteValue_wb;
+	wire[31:0] memReadValue_wb;
+
+	// MEM/WB pipeline register commit 
+	MEM_WB PR4(.CLK(CLK),.aluResult_i(aluResult_mem), .rd_i(rd_mem), .rs1_i(rs1_mem), .rs2_i(rs2_mem), .isBtype_i(isBtype_mem), .isItype_i(isItype_mem), .isRtype_i(isRtype_mem), .isStype_i(isStype_mem), .opcode_i(opcode_mem), .memWriteValue_i(memWriteValue_mem), .memReadValue_i(D_MEM_DI), .aluResult_o(aluResult_wb), .rd_o(rd_wb), .rs1_o(rs1_wb), .rs2_o(rs2_wb), .isBtype_o(isBtype_wb), .isItype_o(isItype_wb), .isRtype_o(isRtype_wb), .isStype_o(isStype_wb), .opcode_o(opcode_wb), .memWriteValue_o(memWriteValue_wb), .memReadValue_o(memReadValue_wb));
+
+	/* WB stage */
+	assign RF_WE = (isItype_wb | isRtype_wb);
+	assign RF_WA1 = rd_wb;
+
+	always @(*) begin
+
+		// alu instruction
+		if (isALU) begin
+			RF_WD_r = aluResult_wb;
+		end
+
+		// store instruction
+		else if (opcode_wb == 7'b0100011) begin
+			RF_WD_r = aluResult_wb;
+		end
+
+		// jump
+		else if (opcode_wb == 7'b1101111 || opcode_wb == 7'b1100111) begin
+			RF_WD_r = pc + 4;
+		end
+
+		// branch
+		else if (opcode_wb == 7'b1100011) begin
+			RF_WD_r = branchTaken;
+		end
+
+		// load instruction
+		else begin
+			RF_WD_r = memReadValue_wb;
+		end
+
+		$display("RF_WD: %0x", RF_WD_r);
+
+	end
+
 
 endmodule //
