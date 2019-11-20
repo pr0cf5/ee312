@@ -1,4 +1,4 @@
-1. implement data hazard stall unit
+1. implement data hazard stall unit / implement load stall / implement load forwarding
 2. implement balu mux
 3. implement jalr and 
 

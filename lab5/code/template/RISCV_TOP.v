@@ -110,6 +110,7 @@ module RISCV_TOP (
 	reg [31:0] RF_WD_r;
 	assign RF_WD = RF_WD_r;
 	wire branchTaken;
+	wire loadStall;
 
 	/* IF Stage */
 
@@ -128,7 +129,8 @@ module RISCV_TOP (
 	SignExtender21 SE3(.in(JtypeImm), .out(signExtendedJtypeImm));
 
 	adder32 pcAdder1(.src1({20'b0, pc}), .src2(4), .out(nextPcInc4));
-	adder32 pcAdder3(.src1({20'b0, pc}), .src2(signExtendedJtypeImm), .out(nextPcJAL));
+	adder32 pcAdder2(.src1({20'b0, pc}), .src2(signExtendedJtypeImm), .out(nextPcJAL));
+	adder32 pcAdder3(.src1({20'b0, pc}), .src2(signExtendedBtypeImm), .out(nextPcBranch));
 
 	// pc Mux
 	pcMux pcMux(.nextPcInc4(nextPcInc4), .nextPcJALR(nextPcJALR), .nextPcJAL(nextPcJAL), .nextPcBranch(nextPcBranch), .pcSrc({pcSrc[2:1], 1'b0}), .nextPc(nextpc));
@@ -159,7 +161,7 @@ module RISCV_TOP (
 	wire flush_id;
 	
 	assign imm = isItype ? ItypeImm : isStype ? StypeImm : 0;
-	assign opType = isStype ? 3'b000 : funct3;
+	assign opType = (isStype || opcode == 7'b0000011) ? 3'b000 : funct3;
 	assign aluOp1 = 3'b100;
 	assign aluOp2 = (isItype || isStype) ? 3'b000 : 3'b100;
 
@@ -211,7 +213,6 @@ module RISCV_TOP (
 
 	// Sign Extension
 	wire[31:0] signExtendedImm;
-
 	SignExtender12 SE1(.in(imm_ex), .out(signExtendedImm));
 
 	ALU alu(.opType(opType_ex), .aux(funct7_ex), .useAux(isRtype_ex), .in1(aluIn1), .in2(aluIn2), .out(aluResult));
@@ -237,9 +238,11 @@ module RISCV_TOP (
 	EX_MEM PR3(.CLK(CLK), .RSTn(RSTn), .latchn(1'b0), .aluResult_i(aluResult), .rd_i(rd_ex), .rs1_i(rs1_ex), .rs2_i(rs2_ex), .isBtype_i(isBtype_ex), .isItype_i(isItype_ex), .isRtype_i(isRtype_ex), .isStype_i(isStype_ex), .isJtype_i(isJtype_ex), .probablyHalt_i(probablyHalt_ex), .opcode_i(opcode_ex), .memWriteValue_i(regVal2_ex), .pc_i(pc_ex), .bpr_i(bpr_ex), .flush_i(flush_ex), .aluResult_o(aluResult_mem), .rd_o(rd_mem), .rs1_o(rs1_mem), .rs2_o(rs2_mem), .isBtype_o(isBtype_mem), .isItype_o(isItype_mem), .isRtype_o(isRtype_mem), .isStype_o(isStype_mem), .isJtype_o(isJtype_mem), .probablyHalt_o(probablyHalt_mem), .opcode_o(opcode_mem), .memWriteValue_o(memWriteValue_mem), .pc_o(pc_mem), .bpr_o(bpr_mem), .flush_o(flush_mem));
 
 	/* MEM stage */
-	assign D_MEM_ADDR = (aluResult[11:2] << 2) & 'h3fff;
-	assign D_MEM_WEN = ~isStype;
-	assign D_MEM_DOUT = memWriteValue_mem;
+	wire memOp;
+	assign D_MEM_ADDR = (aluResult_mem[11:2] << 2) & 'h3fff;
+	assign D_MEM_WEN = ~isStype_mem;
+	assign D_MEM_DOUT = memOp ? RF_WD : memWriteValue_mem;
+	assign D_MEM_BE = 4'b1111;
 
 	wire[31:0] aluResult_wb;
 	wire[4:0] rd_wb;
@@ -259,7 +262,7 @@ module RISCV_TOP (
 	wire flush_wb;
 
 	// MEM/WB pipeline register commit 
-	MEM_WB PR4(.CLK(CLK), .RSTn(RSTn), .latchn(1'b0), .aluResult_i(aluResult_mem), .rd_i(rd_mem), .rs1_i(rs1_mem), .rs2_i(rs2_mem), .isBtype_i(isBtype_mem), .isItype_i(isItype_mem), .isRtype_i(isRtype_mem), .isStype_i(isStype_mem), .isJtype_i(isJtype_mem), .probablyHalt_i(probablyHalt_mem), .opcode_i(opcode_mem), .memWriteValue_i(memWriteValue_mem), .memReadValue_i(D_MEM_DI), .pc_i(pc_mem), .bpr_i(bpr_mem), .flush_i(flush_mem), .aluResult_o(aluResult_wb), .rd_o(rd_wb), .rs1_o(rs1_wb), .rs2_o(rs2_wb), .isBtype_o(isBtype_wb), .isItype_o(isItype_wb), .isRtype_o(isRtype_wb), .isStype_o(isStype_wb), .isJtype_o(isJtype_wb), .probablyHalt_o(probablyHalt_wb), .opcode_o(opcode_wb), .memWriteValue_o(memWriteValue_wb), .memReadValue_o(memReadValue_wb), .pc_o(pc_wb), .bpr_o(bpr_wb), .flush_o(flush_wb));
+	MEM_WB PR4(.CLK(CLK), .RSTn(RSTn), .latchn(1'b0), .aluResult_i(aluResult_mem), .rd_i(rd_mem), .rs1_i(rs1_mem), .rs2_i(rs2_mem), .isBtype_i(isBtype_mem), .isItype_i(isItype_mem), .isRtype_i(isRtype_mem), .isStype_i(isStype_mem), .isJtype_i(isJtype_mem), .probablyHalt_i(probablyHalt_mem), .opcode_i(opcode_mem), .memWriteValue_i(D_MEM_DOUT), .memReadValue_i(D_MEM_DI), .pc_i(pc_mem), .bpr_i(bpr_mem), .flush_i(flush_mem), .aluResult_o(aluResult_wb), .rd_o(rd_wb), .rs1_o(rs1_wb), .rs2_o(rs2_wb), .isBtype_o(isBtype_wb), .isItype_o(isItype_wb), .isRtype_o(isRtype_wb), .isStype_o(isStype_wb), .isJtype_o(isJtype_wb), .probablyHalt_o(probablyHalt_wb), .opcode_o(opcode_wb), .memWriteValue_o(memWriteValue_wb), .memReadValue_o(memReadValue_wb), .pc_o(pc_wb), .bpr_o(bpr_wb), .flush_o(flush_wb));
 
 	/* WB stage */
 	assign RF_WE = (isItype_wb | isRtype_wb | isJtype);
@@ -273,7 +276,7 @@ module RISCV_TOP (
 
 		// store instruction
 		else if (opcode_wb == 7'b0100011) begin
-			RF_WD_r = memWriteValue_wb;
+			RF_WD_r = aluResult_wb;
 		end
 
 		// jump (and link)
@@ -305,12 +308,16 @@ module RISCV_TOP (
 	assign HALT = RSTn & (~flush_wb) & probablyHalt_wb && aluResult_wb == 32'hc;
 
 	/* forwarding unit */
-	forwardUnit FW(.EX_rs1(rs1_ex), .EX_rs2(rs2_ex), .MEM_rd(rd_mem), .WB_rd(rd_wb), .MEM_writeToReg(isItype_mem | isRtype_mem), .WB_writeToReg(isItype_wb | isRtype_wb | isJtype_wb), .aluOp1(aluOp1_f), .aluOp2(aluOp2_f), .baluOp1(baluOp1_f), .baluOp2(baluOp2_f));
+	forwardUnit FW(.EX_rs1(rs1_ex), .EX_rs2(rs2_ex), .MEM_rs2(rs2_mem), .MEM_rd(rd_mem), .WB_rd(rd_wb), .MEM_writeToReg(isItype_mem | isRtype_mem | isJtypeImm), .WB_writeToReg(isItype_wb | isRtype_wb | isJtype_wb), .aluOp1(aluOp1_f), .aluOp2(aluOp2_f), .baluOp1(baluOp1_f), .baluOp2(baluOp2_f), .memOp(memOp));
 
-	ALUSrc1Mux ALUSrc1(.sig(aluOp1_ex | aluOp1_f), .regValue(regVal1_ex), .forwardMEM(aluResult_mem), .forwardWB(aluResult_wb), .out(aluIn1));
-	ALUSrc2Mux ALUSrc2(.sig(aluOp2_ex | aluOp2_f), .regValue(regVal2_ex), .imm(signExtendedImm), .forwardMEM(aluResult_mem), .forwardWB(aluResult_wb), .out(aluIn2));
+	/* LOAD stall detection unit */
+	stallDetectionUnit SD(.EX_rs1(rs1_ex), .EX_rs2(rs2_ex), .MEM_rd(rd_mem), .MEM_isLoad(opcode_mem == 7'b0000011), .stall(loadStall));
 
-	BALUSrcMux BALUSrc1(.sig(3'b000), .regValue(regVal1_ex), .forwardMEM(32'b0), .forwardWB(32'b0), .out(baluIn1));
-	BALUSrcMux BALUSrc2(.sig(3'b000), .regValue(regVal2_ex), .forwardMEM(32'b0), .forwardWB(32'b0), .out(baluIn2));
+	ALUSrc1Mux ALUSrc1(.sig(aluOp1_ex | aluOp1_f), .regValue(regVal1_ex), .forwardMEM(aluResult_mem), .forwardWB(RF_WD), .out(aluIn1));
+	ALUSrc2Mux ALUSrc2(.sig(aluOp2_ex | aluOp2_f), .regValue(regVal2_ex), .imm(signExtendedImm), .forwardMEM(aluResult_mem), .forwardWB(RF_WD), .out(aluIn2));
+
+	// there may need to be a stall
+	BALUSrcMux BALUSrc1(.sig(baluOp1_f), .regValue(regVal1_ex), .forwardMEM(aluResult_mem), .forwardWB(RF_WD), .out(baluIn1));
+	BALUSrcMux BALUSrc2(.sig(baluOp1_f), .regValue(regVal2_ex), .forwardMEM(aluResult_mem), .forwardWB(RF_WD), .out(baluIn2));
 
 endmodule //

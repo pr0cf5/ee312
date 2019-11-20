@@ -19,8 +19,8 @@ module ALUSrc1Mux (input wire[2:0] sig, input wire[31:0] regValue, input wire[31
 			out_r = forwardWB;
 		end
 
-
 	end
+
 endmodule
 
 module ALUSrc2Mux (input wire[2:0] sig, input wire[31:0] regValue, input wire[31:0] imm, input wire[31:0] forwardMEM, input wire[31:0] forwardWB, output wire[31:0] out);
@@ -53,5 +53,25 @@ module ALUSrc2Mux (input wire[2:0] sig, input wire[31:0] regValue, input wire[31
 endmodule
 
 module BALUSrcMux (input wire[2:0] sig, input wire[31:0] regValue, input wire[31:0] forwardMEM, input wire[31:0] forwardWB, output wire[31:0] out);
-	assign out = regValue;
+
+	reg[31:0] out_r;
+	assign out = out_r;
+
+	always @(*) begin
+
+		if (sig[1:0] == 2'b00) begin
+			out_r = regValue;
+		end
+
+		// MEM forward
+		else if (sig[1:0] == 2'b10) begin
+			out_r = forwardMEM;
+		end
+
+		// WB forward
+		else begin
+			out_r = forwardWB;
+		end
+		
+	end
 endmodule
