@@ -13,6 +13,9 @@ module IF_ID(
 	input wire isStype_i,
 	input wire[6:0] opcode_i,
 	input wire[6:0] funct7_i,
+	input wire[11:0] pc_i,
+	input wire bpr_i,
+	input wire flush_i,
 	output wire[2:0] opType_o,
 	output wire[4:0] rd_o,
 	output wire[4:0] rs1_o,
@@ -25,7 +28,10 @@ module IF_ID(
 	output wire isRtype_o,
 	output wire isStype_o,
 	output wire[6:0] opcode_o,
-	output wire[6:0] funct7_o
+	output wire[6:0] funct7_o,
+	output wire[11:0] pc_o,
+	output wire bpr_o,
+	output wire flush_o
 );
 
 	reg[2:0] opType_r;
@@ -41,6 +47,9 @@ module IF_ID(
 	reg isStype_r;
 	reg[6:0] opcode_r;
 	reg[6:0] funct7_r;
+	reg[11:0] pc_r;
+	reg bpr_r;
+	reg flush_r;
 
 	assign opType_o = opType_r;
 	assign rd_o = rd_r;
@@ -55,6 +64,9 @@ module IF_ID(
 	assign isStype_o = isStype_r;
 	assign opcode_o = opcode_r;
 	assign funct7_o = funct7_r;
+	assign pc_o = pc_r;
+	assign bpr_o = bpr_r;
+	assign flush_o = flush_r;
 
 	// commit values synchronized to clock
 	always @(posedge CLK) begin
@@ -71,6 +83,9 @@ module IF_ID(
 		isStype_r <= isStype_i;
 		opcode_r <= opcode_i;
 		funct7_r <= funct7_i;
+		pc_r <= pc_i;
+		bpr_r <= bpr_i;
+		flush_r <= flush_i;
 	end
 
 

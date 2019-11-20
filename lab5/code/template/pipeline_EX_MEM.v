@@ -10,6 +10,9 @@ module EX_MEM(
 	input wire isStype_i,
 	input wire[6:0] opcode_i,
 	input wire[31:0] memWriteValue_i,
+	input wire[11:0] pc_i,
+	input wire bpr_i,
+	input wire flush_i,
 	output wire[31:0] aluResult_o,
 	output wire[4:0] rd_o,
 	output wire[4:0] rs1_o,
@@ -19,7 +22,10 @@ module EX_MEM(
 	output wire isRtype_o,
 	output wire isStype_o,
 	output wire[6:0] opcode_o,
-	output wire[31:0] memWriteValue_o
+	output wire[31:0] memWriteValue_o,
+	output wire[11:0] pc_o,
+	output wire bpr_o,
+	output wire flush_o
 );
 
 	reg[31:0] aluResult_r;
@@ -32,6 +38,9 @@ module EX_MEM(
 	reg isStype_r;
 	reg[6:0] opcode_r;
 	reg[31:0] memWriteValue_r;
+	reg[11:0] pc_r;
+	reg bpr_r;
+	reg flush_r;
 
 	assign aluResult_o = aluResult_r;
 	assign rd_o = rd_r;
@@ -43,6 +52,9 @@ module EX_MEM(
 	assign isStype_o = isStype_r;
 	assign opcode_o = opcode_r;
 	assign memWriteValue_o = memWriteValue_r;
+	assign pc_o = pc_r;
+	assign bpr_o = bpr_r;
+	assign flush_o = flush_r;
 
 	// commit values synchronized to clock
 	always @(posedge CLK) begin
@@ -56,6 +68,9 @@ module EX_MEM(
 		isStype_r <= isStype_i;
 		opcode_r <= opcode_i;
 		memWriteValue_r <= memWriteValue_i;
+		pc_r <= pc_i;
+		bpr_r <= bpr_i;
+		flush_r <= flush_i;
 	end
 
 

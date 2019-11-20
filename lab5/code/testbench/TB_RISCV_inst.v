@@ -153,12 +153,11 @@ module TB_RISCV ();
 	always @ (posedge CLK) begin
 		if (RSTn) begin
 			cycle <= cycle + 1;
-
 			for(i=0; i<`NUM_TEST; i=i+1) begin
 				if ((NUM_INST==TestNumInst[i]) & (TestPassed[i]==0)) begin
 					if (OUTPUT_PORT == TestAns[i]) begin
 						TestPassed[i] <= 1'b1;
-						$display("Test #%s has been passed", TestID[i]);
+						$display("Test #%s has passed", TestID[i]);
 					end
 					else begin
 						TestPassed[i] <= 1'b0;
