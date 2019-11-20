@@ -10,6 +10,8 @@ module MEM_WB(
 	input wire isItype_i,
 	input wire isRtype_i,
 	input wire isStype_i,
+	input wire isJtype_i,
+	input wire probablyHalt_i,
 	input wire[6:0] opcode_i,
 	input wire[31:0] memWriteValue_i,
 	input wire[31:0] memReadValue_i,
@@ -24,6 +26,8 @@ module MEM_WB(
 	output wire isItype_o,
 	output wire isRtype_o,
 	output wire isStype_o,
+	output wire isJtype_o,
+	output wire probablyHalt_o,
 	output wire[6:0] opcode_o,
 	output wire[31:0] memWriteValue_o,
 	output wire[31:0] memReadValue_o,
@@ -40,6 +44,8 @@ module MEM_WB(
 	reg isItype_r;
 	reg isRtype_r;
 	reg isStype_r;
+	reg isJtype_r;
+	reg probablyHalt_r;
 	reg[6:0] opcode_r;
 	reg[31:0] memWriteValue_r;
 	reg[31:0] memReadValue_r;
@@ -51,10 +57,12 @@ module MEM_WB(
 	assign rd_o = rd_r;
 	assign rs1_o = rs1_r;
 	assign rs2_o = rs2_r;
-	assign isBtype_o = flush_i ? 1'b0 : isBtype_r;
-	assign isItype_o = flush_i ? 1'b0 : isItype_r;
-	assign isRtype_o = flush_i ? 1'b0 : isRtype_r;
-	assign isStype_o = flush_i ? 1'b0 : isStype_r;
+	assign isBtype_o = flush_r ? 1'b0 : isBtype_r;
+	assign isItype_o = flush_r ? 1'b0 : isItype_r;
+	assign isRtype_o = flush_r ? 1'b0 : isRtype_r;
+	assign isStype_o = flush_r ? 1'b0 : isStype_r;
+	assign isJtype_0 = flush_r ? 1'b0 : isJtype_r;
+	assign probablyHalt_o = flush_r ? 1'b0 : probablyHalt_r;
 	assign opcode_o = opcode_r;
 	assign memWriteValue_o = memWriteValue_r;
 	assign memReadValue_o = memReadValue_r;
@@ -73,6 +81,8 @@ module MEM_WB(
 			isItype_r <= isItype_i;
 			isRtype_r <= isRtype_i;
 			isStype_r <= isStype_i;
+			isJtype_r <= isJtype_i;
+			probablyHalt_r <= probablyHalt_i;
 			opcode_r <= opcode_i;
 			memWriteValue_r <= memWriteValue_i;
 			memReadValue_r <= memReadValue_i;

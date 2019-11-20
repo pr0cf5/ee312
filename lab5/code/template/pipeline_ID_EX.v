@@ -15,6 +15,8 @@ module ID_EX(
 	input wire isItype_i,
 	input wire isRtype_i,
 	input wire isStype_i,
+	input wire isJtype_i,
+	input wire probablyHalt_i,
 	input wire[6:0] opcode_i,
 	input wire[6:0] funct7_i,
 	input wire[11:0] pc_i,
@@ -33,6 +35,8 @@ module ID_EX(
 	output wire isItype_o,
 	output wire isRtype_o,
 	output wire isStype_o,
+	output wire isJtype_o,
+	output wire probablyHalt_o,
 	output wire[6:0] opcode_o,
 	output wire[6:0] funct7_o,
 	output wire[11:0] pc_o,
@@ -53,6 +57,8 @@ module ID_EX(
 	reg isItype_r;
 	reg isRtype_r;
 	reg isStype_r;
+	reg isJtype_r;
+	reg probablyHalt_r;
 	reg[6:0] opcode_r;
 	reg[6:0] funct7_r;
 	reg[11:0] pc_r;
@@ -68,10 +74,12 @@ module ID_EX(
 	assign aluOp1_o = aluOp1_r;
 	assign aluOp2_o = aluOp2_r;
 	assign imm_o = imm_r;
-	assign isBtype_o = flush_i ? 1'b0 : isBtype_r;
-	assign isItype_o = flush_i ? 1'b0 : isItype_r;
-	assign isRtype_o = flush_i ? 1'b0 : isRtype_r;
-	assign isStype_o = flush_i ? 1'b0 : isStype_r;
+	assign isBtype_o = flush_r ? 1'b0 : isBtype_r;
+	assign isItype_o = flush_r ? 1'b0 : isItype_r;
+	assign isRtype_o = flush_r ? 1'b0 : isRtype_r;
+	assign isStype_o = flush_r ? 1'b0 : isStype_r;
+	assign isJtype_0 = flush_r ? 1'b0 : isJtype_r;
+	assign probablyHalt_o = flush_r ? 1'b0 : probablyHalt_r;
 	assign opcode_o = opcode_r;
 	assign funct7_o = funct7_r;
 	assign pc_o = pc_r;
@@ -94,6 +102,8 @@ module ID_EX(
 			isItype_r <= isItype_i;
 			isRtype_r <= isRtype_i;
 			isStype_r <= isStype_i;
+			isJtype_r <= isJtype_i;
+			probablyHalt_r <= probablyHalt_i;
 			opcode_r <= opcode_i;
 			funct7_r <= funct7_i;
 			pc_r <= pc_i;

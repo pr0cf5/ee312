@@ -1,0 +1,9 @@
+1. implement data hazard stall unit
+2. implement balu mux
+3. implement jalr and 
+
+... lots of tests ...
+
+
+4. implement branch prediction and branch hanzard detection
+5. implement advanced branch prediction
