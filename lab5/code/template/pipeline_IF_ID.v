@@ -1,5 +1,7 @@
 module IF_ID(
 	input wire CLK,
+	input wire RSTn,
+	input wire latchn,
 	input wire[2:0] opType_i,
 	input wire[4:0] rd_i,
 	input wire[4:0] rs1_i,
@@ -16,6 +18,7 @@ module IF_ID(
 	input wire[11:0] pc_i,
 	input wire bpr_i,
 	input wire flush_i,
+	input wire probablyHalt_i,
 	output wire[2:0] opType_o,
 	output wire[4:0] rd_o,
 	output wire[4:0] rs1_o,
@@ -31,7 +34,8 @@ module IF_ID(
 	output wire[6:0] funct7_o,
 	output wire[11:0] pc_o,
 	output wire bpr_o,
-	output wire flush_o
+	output wire flush_o,
+	output wire probablyHalt_o
 );
 
 	reg[2:0] opType_r;
@@ -50,6 +54,7 @@ module IF_ID(
 	reg[11:0] pc_r;
 	reg bpr_r;
 	reg flush_r;
+	reg probablyHalt_r;
 
 	assign opType_o = opType_r;
 	assign rd_o = rd_r;
@@ -58,34 +63,38 @@ module IF_ID(
 	assign aluOp1_o = aluOp1_r;
 	assign aluOp2_o = aluOp2_r;
 	assign imm_o = imm_r;
-	assign isBtype_o = isBtype_r;
-	assign isItype_o = isItype_r;
-	assign isRtype_o = isRtype_r;
-	assign isStype_o = isStype_r;
+	assign isBtype_o = flush_i ? 1'b0 : isBtype_r;
+	assign isItype_o = flush_i ? 1'b0 : isItype_r;
+	assign isRtype_o = flush_i ? 1'b0 : isRtype_r;
+	assign isStype_o = flush_i ? 1'b0 : isStype_r;
 	assign opcode_o = opcode_r;
 	assign funct7_o = funct7_r;
 	assign pc_o = pc_r;
 	assign bpr_o = bpr_r;
 	assign flush_o = flush_r;
+	assign probablyHalt_o = probablyHalt_r;
 
 	// commit values synchronized to clock
 	always @(posedge CLK) begin
-		opType_r <= opType_i;
-		rd_r <= rd_i;
-		rs1_r <= rs1_i;
-		rs2_r <= rs2_i;
-		aluOp1_r <= aluOp1_i;
-		aluOp2_r <= aluOp2_i;
-		imm_r <= imm_i;
-		isBtype_r <= isBtype_i;
-		isItype_r <= isItype_i;
-		isRtype_r <= isRtype_i;
-		isStype_r <= isStype_i;
-		opcode_r <= opcode_i;
-		funct7_r <= funct7_i;
-		pc_r <= pc_i;
-		bpr_r <= bpr_i;
-		flush_r <= flush_i;
+		if (RSTn & (~latchn)) begin
+			opType_r <= opType_i;
+			rd_r <= rd_i;
+			rs1_r <= rs1_i;
+			rs2_r <= rs2_i;
+			aluOp1_r <= aluOp1_i;
+			aluOp2_r <= aluOp2_i;
+			imm_r <= imm_i;
+			isBtype_r <= isBtype_i;
+			isItype_r <= isItype_i;
+			isRtype_r <= isRtype_i;
+			isStype_r <= isStype_i;
+			opcode_r <= opcode_i;
+			funct7_r <= funct7_i;
+			pc_r <= pc_i;
+			bpr_r <= bpr_i;
+			flush_r <= flush_i;
+			probablyHalt_r <= probablyHalt_i;
+		end
 	end
 
 

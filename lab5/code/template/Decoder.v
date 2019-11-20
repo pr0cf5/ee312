@@ -82,4 +82,5 @@ module Decoder (
 			end
 		endcase
 	end
+
 endmodule //

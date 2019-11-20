@@ -23,7 +23,7 @@ module REG_FILE #(
 	begin
 		if(WE && (WA != {AWIDTH{1'b0}}))
 		begin
-        		RF[WA] <= WD;
+        	RF[WA] <= WD;
     		end
 
 		else if (~RSTn)

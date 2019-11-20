@@ -22,4 +22,3 @@ module SignExtender21 (
 
 	assign out = in[20] ? {11'b11111111111, in} : in;
 endmodule
-

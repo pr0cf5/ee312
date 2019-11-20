@@ -1,5 +1,7 @@
 module ID_EX(
 	input wire CLK,
+	input wire RSTn,
+	input wire latchn,
 	input wire[31:0] regVal1_i,
 	input wire[31:0] regVal2_i,
 	input wire[2:0] opType_i,
@@ -66,10 +68,10 @@ module ID_EX(
 	assign aluOp1_o = aluOp1_r;
 	assign aluOp2_o = aluOp2_r;
 	assign imm_o = imm_r;
-	assign isBtype_o = isBtype_r;
-	assign isItype_o = isItype_r;
-	assign isRtype_o = isRtype_r;
-	assign isStype_o = isStype_r;
+	assign isBtype_o = flush_i ? 1'b0 : isBtype_r;
+	assign isItype_o = flush_i ? 1'b0 : isItype_r;
+	assign isRtype_o = flush_i ? 1'b0 : isRtype_r;
+	assign isStype_o = flush_i ? 1'b0 : isStype_r;
 	assign opcode_o = opcode_r;
 	assign funct7_o = funct7_r;
 	assign pc_o = pc_r;
@@ -78,24 +80,26 @@ module ID_EX(
 
 	// commit values synchronized to clock
 	always @(posedge CLK) begin
-		regVal1_r <= regVal1_i;
-		regVal2_r <= regVal2_i;
-		opType_r <= opType_i;
-		rd_r <= rd_i;
-		rs1_r <= rs1_i;
-		rs2_r <= rs2_i;
-		aluOp1_r <= aluOp1_i;
-		aluOp2_r <= aluOp2_i;
-		imm_r <= imm_i;
-		isBtype_r <= isBtype_i;
-		isItype_r <= isItype_i;
-		isRtype_r <= isRtype_i;
-		isStype_r <= isStype_i;
-		opcode_r <= opcode_i;
-		funct7_r <= funct7_i;
-		pc_r <= pc_i;
-		bpr_r <= bpr_i;
-		flush_r <= flush_i;
+		if (RSTn & (~latchn)) begin
+			regVal1_r <= regVal1_i;
+			regVal2_r <= regVal2_i;
+			opType_r <= opType_i;
+			rd_r <= rd_i;
+			rs1_r <= rs1_i;
+			rs2_r <= rs2_i;
+			aluOp1_r <= aluOp1_i;
+			aluOp2_r <= aluOp2_i;
+			imm_r <= imm_i;
+			isBtype_r <= isBtype_i;
+			isItype_r <= isItype_i;
+			isRtype_r <= isRtype_i;
+			isStype_r <= isStype_i;
+			opcode_r <= opcode_i;
+			funct7_r <= funct7_i;
+			pc_r <= pc_i;
+			bpr_r <= bpr_i;
+			flush_r <= flush_i;
+		end
 	end
 
 

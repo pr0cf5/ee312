@@ -1,5 +1,7 @@
 module EX_MEM(
 	input wire CLK,
+	input wire RSTn,
+	input wire latchn,
 	input wire[31:0] aluResult_i,
 	input wire[4:0] rd_i,
 	input wire[4:0] rs1_i,
@@ -46,10 +48,10 @@ module EX_MEM(
 	assign rd_o = rd_r;
 	assign rs1_o = rs1_r;
 	assign rs2_o = rs2_r;
-	assign isBtype_o = isBtype_r;
-	assign isItype_o = isItype_r;
-	assign isRtype_o = isRtype_r;
-	assign isStype_o = isStype_r;
+	assign isBtype_o = flush_i ? 1'b0 : isBtype_r;
+	assign isItype_o = flush_i ? 1'b0 : isItype_r;
+	assign isRtype_o = flush_i ? 1'b0 : isRtype_r;
+	assign isStype_o = flush_i ? 1'b0 : isStype_r;
 	assign opcode_o = opcode_r;
 	assign memWriteValue_o = memWriteValue_r;
 	assign pc_o = pc_r;
@@ -58,19 +60,21 @@ module EX_MEM(
 
 	// commit values synchronized to clock
 	always @(posedge CLK) begin
-		aluResult_r <= aluResult_i;
-		rd_r <= rd_i;
-		rs1_r <= rs1_i;
-		rs2_r <= rs2_i;
-		isBtype_r <= isBtype_i;
-		isItype_r <= isItype_i;
-		isRtype_r <= isRtype_i;
-		isStype_r <= isStype_i;
-		opcode_r <= opcode_i;
-		memWriteValue_r <= memWriteValue_i;
-		pc_r <= pc_i;
-		bpr_r <= bpr_i;
-		flush_r <= flush_i;
+		if (RSTn & ~(latchn)) begin
+			aluResult_r <= aluResult_i;
+			rd_r <= rd_i;
+			rs1_r <= rs1_i;
+			rs2_r <= rs2_i;
+			isBtype_r <= isBtype_i;
+			isItype_r <= isItype_i;
+			isRtype_r <= isRtype_i;
+			isStype_r <= isStype_i;
+			opcode_r <= opcode_i;
+			memWriteValue_r <= memWriteValue_i;
+			pc_r <= pc_i;
+			bpr_r <= bpr_i;
+			flush_r <= flush_i;
+		end
 	end
 
 
