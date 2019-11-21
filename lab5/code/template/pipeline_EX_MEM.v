@@ -87,5 +87,9 @@ module EX_MEM(
 		end
 	end
 
+	initial begin
+		flush_r <= 1;
+	end
+
 
 endmodule

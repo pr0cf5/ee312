@@ -127,6 +127,7 @@ module TB_RISCV ();
 		TestID[1] <= "2";		TestNumInst[1] <= 16'h0002;		TestAns[1] <= 16'h0044;		TestPassed[1] <= 1'b0;
 		TestID[2] <= "3";		TestNumInst[2] <= 16'h0003;		TestAns[2] <= 16'h0f00;		TestPassed[2] <= 1'b0;
 		TestID[3] <= "4";		TestNumInst[3] <= 16'h0004;		TestAns[3] <= 16'h0044;		TestPassed[3] <= 1'b0;
+		TestID[4] <= "5";		TestNumInst[4] <= 16'h0005;		TestAns[4] <= 16'h0088;		TestPassed[4] <= 1'b0;
 
 	end
 

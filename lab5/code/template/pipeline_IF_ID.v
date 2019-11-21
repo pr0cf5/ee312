@@ -103,5 +103,8 @@ module IF_ID(
 		end
 	end
 
+	initial begin
+		flush_r <= 1;
+	end
 
 endmodule

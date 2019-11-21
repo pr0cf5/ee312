@@ -8,3 +8,4 @@ __start:
   add a1, a0, a0
   sw a1, 0(sp)
   lw a0, 0(sp)
+  add a2, a0, a0
