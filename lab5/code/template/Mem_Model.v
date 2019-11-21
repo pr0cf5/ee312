@@ -33,7 +33,6 @@ module SP_SRAM #(parameter ROMDATA = "", AWIDTH = 12, SIZE = 4096) (
 				if (BE[3]) temp[31:24] = DI[31:24];
 
 				ram[ADDR] = temp;
-				$display("MEM[%0x] <= %0x", ADDR, temp);
 			end
 		end
 	end

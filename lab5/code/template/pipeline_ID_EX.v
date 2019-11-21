@@ -78,7 +78,7 @@ module ID_EX(
 	assign isItype_o = flush_r ? 1'b0 : isItype_r;
 	assign isRtype_o = flush_r ? 1'b0 : isRtype_r;
 	assign isStype_o = flush_r ? 1'b0 : isStype_r;
-	assign isJtype_0 = flush_r ? 1'b0 : isJtype_r;
+	assign isJtype_o = flush_r ? 1'b0 : isJtype_r;
 	assign probablyHalt_o = flush_r ? 1'b0 : probablyHalt_r;
 	assign opcode_o = opcode_r;
 	assign funct7_o = funct7_r;

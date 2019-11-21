@@ -129,12 +129,19 @@ module TB_RISCV ();
 		TestID[3] <= "4";		TestNumInst[3] <= 16'h0004;		TestAns[3] <= 16'h0044;		TestPassed[3] <= 1'b0;
 		TestID[4] <= "5";		TestNumInst[4] <= 16'h0005;		TestAns[4] <= 16'h0088;		TestPassed[4] <= 1'b0;
 		TestID[5] <= "6";		TestNumInst[5] <= 16'h0006;		TestAns[5] <= 16'h0000;		TestPassed[5] <= 1'b0;
-		TestID[6] <= "7";		TestNumInst[6] <= 16'h0007;		TestAns[6] <= 16'h0f04;		TestPassed[6] <= 1'b0;
+		TestID[6] <= "7";		TestNumInst[6] <= 16'h0007;		TestAns[6] <= 16'h0efc;		TestPassed[6] <= 1'b0;
 		TestID[7] <= "8";		TestNumInst[7] <= 16'h0008;		TestAns[7] <= 16'h0f00;		TestPassed[7] <= 1'b0;
-		TestID[8] <= "9";		TestNumInst[8] <= 16'h0009;		TestAns[8] <= 16'h0f08;		TestPassed[8] <= 1'b0;
-		TestID[9] <= "10";		TestNumInst[9] <= 16'h000a;		TestAns[9] <= 16'h0f04;		TestPassed[9] <= 1'b0;
-		TestID[10] <= "11";		TestNumInst[10] <= 16'h000b;	TestAns[10] <= 16'h0f04;	TestPassed[10] <= 1'b0;
-		TestID[11] <= "12";		TestNumInst[11] <= 16'h000c;	TestAns[11] <= 16'h0f08;	TestPassed[11] <= 1'b0;
+		TestID[8] <= "9";		TestNumInst[8] <= 16'h0009;		TestAns[8] <= 16'h0ef8;		TestPassed[8] <= 1'b0;
+		TestID[9] <= "10";		TestNumInst[9] <= 16'h000a;		TestAns[9] <= 16'h0efc;		TestPassed[9] <= 1'b0;
+		TestID[10] <= "11";		TestNumInst[10] <= 16'h000b;	TestAns[10] <= 16'h0efc;	TestPassed[10] <= 1'b0;
+		TestID[11] <= "12";		TestNumInst[11] <= 16'h000c;	TestAns[11] <= 16'h0ef8;	TestPassed[11] <= 1'b0;
+		TestID[12] <= "13";		TestNumInst[12] <= 16'h000d;	TestAns[12] <= 16'h0034;	TestPassed[12] <= 1'b0; // JAL
+		TestID[13] <= "14";		TestNumInst[13] <= 16'h000e;	TestAns[13] <= 16'h0000;	TestPassed[13] <= 1'b0;
+		TestID[14] <= "15";		TestNumInst[14] <= 16'h000f;	TestAns[14] <= 16'h00dd;	TestPassed[14] <= 1'b0;
+		TestID[15] <= "16";		TestNumInst[15] <= 16'h0010;	TestAns[15] <= 16'h0054;	TestPassed[15] <= 1'b0; // JALR (ret)
+		TestID[16] <= "17";		TestNumInst[16] <= 16'h0011;	TestAns[16] <= 16'h0000;	TestPassed[16] <= 1'b0; // XOR
+		TestID[17] <= "18";		TestNumInst[17] <= 16'h0012;	TestAns[17] <= 16'h00cc;	TestPassed[17] <= 1'b0; // ADDI
+		TestID[18] <= "19";		TestNumInst[18] <= 16'h0013;	TestAns[18] <= 16'h0000;	TestPassed[18] <= 1'b0; // XOR
 
 	end
 

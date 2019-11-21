@@ -1,4 +1,7 @@
 module pcMux (
+	input wire [6:0] opcode_ex,
+	input wire flush_ex,
+	input wire baluResult,
 	input wire [31:0] nextPcInc4,
 	input wire [31:0] nextPcJALR,
 	input wire [31:0] nextPcJAL,
@@ -25,8 +28,13 @@ module pcMux (
 				//$display("JUMP IMM");
 			end
 			3'b100: begin
-				nextPc_r = nextPcJALR;
-				//$display("JUMP REG");
+				if ((~flush_ex) & opcode_ex == 7'b1100111) begin
+					nextPc_r = nextPcJALR;
+				end
+
+				else begin
+					nextPc_r = nextPcInc4;
+				end
 			end
 
 		endcase
