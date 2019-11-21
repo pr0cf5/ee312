@@ -1,6 +1,32 @@
 2. implement balu mux
 3. implement jalr and 
 
+I am planning to implement JALR in a similar manner to branch prediction.
+During the next 2 cycles, idle instructions will be executed, and if the jump address is resolved the two of them are flushed (by flushed, it means that ID and EX are flushed. If you can't understand this draw a diagram).
+
+There should be a JALR detector or flag of any sort. It can be done easily with the opcode_ex wire.
+
+The condition is:
+opcode_ex == 7'b1100111
+
+The resulting signal is:
+pcMux = <appropriate mux signal>
+ID/EX.flush = 1
+EX/MEM.flush = 1
+
+Branch misprediction detector
+
+The condition is:
+opcode_ex == 7'b1100111 && bpr_ex != baluResult
+
+The resulting signal is:
+pcMux = <appropriate mux signal>
+ID/EX.flush = 1
+EX/MEM.flush = 1
+
+The pc values in the pipeline registers must be used to recover from branch misprediction
+
+
 ... lots of tests ...
 
 
