@@ -6,3 +6,4 @@
 
 4. implement branch prediction and branch hanzard detection
 5. implement advanced branch prediction
+6. remove unnecessary stalls (some cases stalls for rs2 is not needed)
