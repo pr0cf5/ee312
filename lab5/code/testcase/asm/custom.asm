@@ -26,6 +26,11 @@ __start:
 __firstjump:
   xor a1, a1, a1
   addi a1, a1, 0xdd 
+  beq a1, a1, __secondjump
   ret 
   
+__secondjump:
+  xor a1, a1, a1
+  addi a1, a1, 0xee
+  ret
    

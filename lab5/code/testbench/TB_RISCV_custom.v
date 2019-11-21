@@ -138,10 +138,10 @@ module TB_RISCV ();
 		TestID[12] <= "13";		TestNumInst[12] <= 16'h000d;	TestAns[12] <= 16'h0034;	TestPassed[12] <= 1'b0; // JAL
 		TestID[13] <= "14";		TestNumInst[13] <= 16'h000e;	TestAns[13] <= 16'h0000;	TestPassed[13] <= 1'b0;
 		TestID[14] <= "15";		TestNumInst[14] <= 16'h000f;	TestAns[14] <= 16'h00dd;	TestPassed[14] <= 1'b0;
-		TestID[15] <= "16";		TestNumInst[15] <= 16'h0010;	TestAns[15] <= 16'h0054;	TestPassed[15] <= 1'b0; // JALR (ret)
+		TestID[15] <= "16";		TestNumInst[15] <= 16'h0010;	TestAns[15] <= 16'h0001;	TestPassed[15] <= 1'b0; // BEQ
 		TestID[16] <= "17";		TestNumInst[16] <= 16'h0011;	TestAns[16] <= 16'h0000;	TestPassed[16] <= 1'b0; // XOR
-		TestID[17] <= "18";		TestNumInst[17] <= 16'h0012;	TestAns[17] <= 16'h00cc;	TestPassed[17] <= 1'b0; // ADDI
-		TestID[18] <= "19";		TestNumInst[18] <= 16'h0013;	TestAns[18] <= 16'h0000;	TestPassed[18] <= 1'b0; // XOR
+		TestID[17] <= "18";		TestNumInst[17] <= 16'h0012;	TestAns[17] <= 16'h00ee;	TestPassed[17] <= 1'b0; // ADDI
+		TestID[18] <= "19";		TestNumInst[18] <= 16'h0013;	TestAns[18] <= 16'h0064;	TestPassed[18] <= 1'b0; // RET
 
 	end
 

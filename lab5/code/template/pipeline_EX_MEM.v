@@ -3,6 +3,7 @@ module EX_MEM(
 	input wire RSTn,
 	input wire latchn,
 	input wire[31:0] aluResult_i,
+	input wire baluResult_i,
 	input wire[4:0] rd_i,
 	input wire[4:0] rs1_i,
 	input wire[4:0] rs2_i,
@@ -18,6 +19,7 @@ module EX_MEM(
 	input wire bpr_i,
 	input wire flush_i,
 	output wire[31:0] aluResult_o,
+	output wire baluResult_o,
 	output wire[4:0] rd_o,
 	output wire[4:0] rs1_o,
 	output wire[4:0] rs2_o,
@@ -35,6 +37,7 @@ module EX_MEM(
 );
 
 	reg[31:0] aluResult_r;
+	reg baluResult_r;
 	reg[4:0] rd_r;
 	reg[4:0] rs1_r;
 	reg[4:0] rs2_r;
@@ -51,6 +54,7 @@ module EX_MEM(
 	reg flush_r;
 
 	assign aluResult_o = aluResult_r;
+	assign baluResult_o = baluResult_r;
 	assign rd_o = rd_r;
 	assign rs1_o = rs1_r;
 	assign rs2_o = rs2_r;
@@ -70,6 +74,7 @@ module EX_MEM(
 	always @(posedge CLK) begin
 		if (RSTn & ~(latchn)) begin
 			aluResult_r <= aluResult_i;
+			baluResult_r <= baluResult_i;
 			rd_r <= rd_i;
 			rs1_r <= rs1_i;
 			rs2_r <= rs2_i;

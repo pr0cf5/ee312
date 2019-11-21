@@ -1,15 +1,15 @@
 module stallDetectionUnit(
 	input wire flush_id,
 	input wire flush_ex,
-	input wire flush_mem,
-	input wire[4:0] EX_rs1,
-	input wire[4:0] EX_rs2,
-	input wire[4:0] MEM_rd,
-	input wire MEM_isLoad,
+	input wire[4:0] ID_rs1,
+	input wire[4:0] ID_rs2,
+	input wire[4:0] EX_rd,
+	input wire EX_isLoad,
+	input wire ID_isRtype,
 	output wire stall
 );
 
-	assign working = (flush_ex == 0) & (flush_mem == 0);
-	assign stall = ((MEM_rd == EX_rs1 && MEM_rd !=0 && MEM_isLoad) || (MEM_rd == EX_rs2 && MEM_rd !=0 && MEM_isLoad)) & working;
+	assign working = (flush_ex == 0) & (flush_id== 0);
+	assign stall = ((EX_rd == ID_rs1 && EX_rd !=0 && EX_isLoad) || (EX_rd == ID_rs2 && EX_rd != 0 && EX_isLoad && ID_isRtype)) & working;
 
 endmodule

@@ -18,6 +18,7 @@ module IF_ID(
 	input wire[6:0] opcode_i,
 	input wire[6:0] funct7_i,
 	input wire[11:0] pc_i,
+	input wire[31:0] branchPc_i,
 	input wire bpr_i,
 	input wire flush_i,
 	output wire[2:0] opType_o,
@@ -36,6 +37,7 @@ module IF_ID(
 	output wire[6:0] opcode_o,
 	output wire[6:0] funct7_o,
 	output wire[11:0] pc_o,
+	output wire[31:0] branchPc_o,
 	output wire bpr_o,
 	output wire flush_o
 );
@@ -56,6 +58,7 @@ module IF_ID(
 	reg[6:0] opcode_r;
 	reg[6:0] funct7_r;
 	reg[11:0] pc_r;
+	reg[31:0] branchPc_r;
 	reg bpr_r;
 	reg flush_r;
 
@@ -75,6 +78,7 @@ module IF_ID(
 	assign opcode_o = opcode_r;
 	assign funct7_o = funct7_r;
 	assign pc_o = pc_r;
+	assign branchPc_o = branchPc_r;
 	assign bpr_o = bpr_r;
 	assign flush_o = flush_r;
 	
@@ -98,6 +102,7 @@ module IF_ID(
 			opcode_r <= opcode_i;
 			funct7_r <= funct7_i;
 			pc_r <= pc_i;
+			branchPc_r <= branchPc_i;
 			bpr_r <= bpr_i;
 			flush_r <= flush_i;
 		end

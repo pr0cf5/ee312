@@ -61,6 +61,6 @@ module forwardUnit(
 		end
 	end
 
-	assign memOp = WB_writeToReg && MEM_rs2 == WB_rd;
+	assign memOp = WB_writeToReg && (MEM_rs2 == WB_rd);
 
 endmodule

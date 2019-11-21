@@ -33,3 +33,10 @@ The pc values in the pipeline registers must be used to recover from branch misp
 4. implement branch prediction and branch hanzard detection
 5. implement advanced branch prediction
 6. remove unnecessary stalls (some cases stalls for rs2 is not needed)
+
+STUFF TO TEST
+
+1. check forwarding on second register (RS2)
+2. check forwarding on branch ALU
+3. branch tests
+4. fuzzing tests
