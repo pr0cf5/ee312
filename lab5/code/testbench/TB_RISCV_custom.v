@@ -128,6 +128,13 @@ module TB_RISCV ();
 		TestID[2] <= "3";		TestNumInst[2] <= 16'h0003;		TestAns[2] <= 16'h0f00;		TestPassed[2] <= 1'b0;
 		TestID[3] <= "4";		TestNumInst[3] <= 16'h0004;		TestAns[3] <= 16'h0044;		TestPassed[3] <= 1'b0;
 		TestID[4] <= "5";		TestNumInst[4] <= 16'h0005;		TestAns[4] <= 16'h0088;		TestPassed[4] <= 1'b0;
+		TestID[5] <= "6";		TestNumInst[5] <= 16'h0006;		TestAns[5] <= 16'h0000;		TestPassed[5] <= 1'b0;
+		TestID[6] <= "7";		TestNumInst[6] <= 16'h0007;		TestAns[6] <= 16'h0f04;		TestPassed[6] <= 1'b0;
+		TestID[7] <= "8";		TestNumInst[7] <= 16'h0008;		TestAns[7] <= 16'h0f00;		TestPassed[7] <= 1'b0;
+		TestID[8] <= "9";		TestNumInst[8] <= 16'h0009;		TestAns[8] <= 16'h0f08;		TestPassed[8] <= 1'b0;
+		TestID[9] <= "10";		TestNumInst[9] <= 16'h000a;		TestAns[9] <= 16'h0f04;		TestPassed[9] <= 1'b0;
+		TestID[10] <= "11";		TestNumInst[10] <= 16'h000b;	TestAns[10] <= 16'h0f04;	TestPassed[10] <= 1'b0;
+		TestID[11] <= "12";		TestNumInst[11] <= 16'h000c;	TestAns[11] <= 16'h0f08;	TestPassed[11] <= 1'b0;
 
 	end
 

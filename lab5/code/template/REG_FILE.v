@@ -24,6 +24,7 @@ module REG_FILE #(
 		if(WE && (WA != {AWIDTH{1'b0}}))
 		begin
         	RF[WA] <= WD;
+        	$display("RF[%0x] <= %0x", WA, WD);
     	end
 
 		else if (~RSTn)
