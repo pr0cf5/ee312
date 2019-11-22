@@ -134,7 +134,7 @@ module RISCV_TOP (
 	adder32 pcAdder2(.src1({20'b0, pc}), .src2(signExtendedJtypeImm), .out(nextPcJAL));
 	adder32 pcAdder3(.src1({20'b0, pc}), .src2(signExtendedBtypeImm), .out(nextPcBranch));
 	
-	wire bpr = 0;
+	wire bpr = 1'b0;
 
 	// Decode current instruction
 	Decoder decoder(.instruction(I_MEM_DI), .opcode(opcode), .rs1(rs1), .rs2(rs2), .rd(rd), .writeToReg(writeToReg), .writeToMem(writeToMem), .isRtype(isRtype), .isItype(isItype), .isStype(isStype), .isBtype(isBtype), .isUtype(isUtype), .isJtype(isJtype), .isALU (isALU), .ItypeImm(ItypeImm), .StypeImm(StypeImm), .BtypeImm(BtypeImm), .UtypeImm(UtypeImm), .JtypeImm(JtypeImm), .funct3(funct3), .funct7(funct7), .halt(probablyHalt), .pcSrc(pcSrc));
@@ -283,31 +283,26 @@ module RISCV_TOP (
 		// alu instruction
 		if (opcode_wb == 7'b0010011 || opcode_wb == 7'b0110011) begin
 			RF_WD_r = aluResult_wb;
-			$display("here0: %0x", aluResult_wb);
 		end
 
 		// store instruction
 		else if (opcode_wb == 7'b0100011) begin
 			RF_WD_r = aluResult_wb;
-			$display("here1: %0x", aluResult_wb);
 		end
 
 		// jump (and link)
 		else if (opcode_wb == 7'b1101111 || opcode_wb == 7'b1100111) begin
 			RF_WD_r = pc_wb + 4;
-			$display("here2: %0x", RF_WD_r);
 		end
 
 		// branch
 		else if (opcode_wb == 7'b1100011) begin
 			RF_WD_r = baluResult_wb;
-			$display("here3: %0x", RF_WD_r);
 		end
 
 		// load instruction
 		else begin
 			RF_WD_r = memReadValue_wb;
-			$display("here4: %0x", RF_WD_r);
 		end
 	end
 
@@ -327,7 +322,7 @@ module RISCV_TOP (
 	forwardUnit FW(.EX_rs1(rs1_ex), .EX_rs2(rs2_ex), .MEM_rs2(rs2_mem), .MEM_rd(rd_mem), .WB_rd(rd_wb), .MEM_writeToReg(isItype_mem | isRtype_mem | isJtype_mem), .WB_writeToReg(isItype_wb | isRtype_wb | isJtype_wb), .aluOp1(aluOp1_f), .aluOp2(aluOp2_f), .baluOp1(baluOp1_f), .baluOp2(baluOp2_f), .memOp(memOpForward));
 
 	/* LOAD stall detection unit */
-	stallDetectionUnit SD(.flush_id(flush_id), .flush_ex(flush_ex), .ID_rs1(rs1_id), .ID_rs2(rs2_id), .EX_rd(rd_ex), .EX_isLoad(opcode_ex == 7'b0000011), .ID_isRtype(isRtype_id), .stall(loadStall));
+	stallDetectionUnit SD(.flush_id(flush_id), .flush_ex(flush_ex), .ID_rs1(rs1_id), .ID_rs2(rs2_id), .EX_rd(rd_ex), .EX_isLoad(opcode_ex == 7'b0000011), .ID_isRtype(isRtype_id), .ID_isBtype(isBtype_id), .stall(loadStall));
 
 	ALUSrc1Mux ALUSrc1(.sig(aluOp1_ex | aluOp1_f), .regValue(regVal1_ex), .forwardMEM(aluResult_mem), .forwardWB(RF_WD), .out(aluIn1));
 	ALUSrc2Mux ALUSrc2(.sig(aluOp2_ex | aluOp2_f), .regValue(regVal2_ex), .imm(signExtendedImm), .forwardMEM(aluResult_mem), .forwardWB(RF_WD), .out(aluIn2));
@@ -337,13 +332,8 @@ module RISCV_TOP (
 	BALUSrcMux BALUSrc2(.sig(baluOp2_f), .regValue(regVal2_ex), .forwardMEM(aluResult_mem), .forwardWB(RF_WD), .out(baluIn2));
 
 	// control path
-	pcMux pcMux(.opcode_ex(opcode_ex), .flush_ex(flush_ex), .mispredicted(mispredicted), .baluResult(baluResult), .recover_pc({20'b0, pc_ex}), .nextPcInc4(nextPcInc4), .nextPcJALR(aluResult), .nextPcJAL(nextPcJAL), .nextPcBranch(nextPcBranch), .pcSrc({pcSrc[2:1], bpr}), .branchPc_ex(branchPc_ex), .nextPc(nextpc));
+	pcMux pcMux(.opcode_ex(opcode_ex), .flush_ex(flush_ex), .mispredicted(mispredicted), .baluResult(baluResult), .recover_pc({20'b0, pc_ex}), .nextPcInc4(nextPcInc4), .nextPcJALR(aluResult), .nextPcJAL(nextPcJAL), .nextPcBranch(nextPcBranch), .pcSrc({pcSrc[2:1], bpr & isBtype}), .branchPc_ex(branchPc_ex), .nextPc(nextpc));
 
 	// flush instructions (IF/ID, ID/EX)
 	mispredictionDetectionUnit MDU (.flush_ex(flush_ex), .opcode_ex(opcode_ex), .bpr_ex(bpr_ex), .baluResult(baluResult), .mispredicted(mispredicted));
-
-	always @(negedge CLK) begin
-		$display("pc: %0x, wbdata: %0x, opcode=%0x", pc_wb, RF_WD, opcode_wb); 
-	end
-
 endmodule //

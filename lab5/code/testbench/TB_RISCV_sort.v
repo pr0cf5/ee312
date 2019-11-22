@@ -1,5 +1,5 @@
 `timescale 1ns/10ps
-`define NUM_TEST 40
+`define NUM_TEST 41
 `define TESTID_SIZE 5
 
 module TB_RISCV ();
@@ -144,6 +144,7 @@ module TB_RISCV ();
 		TestID[17] <= "18";		TestNumInst[17] <= 16'h0100;	TestAns[17] <= 16'h0011;	TestPassed[17] <= 1'b0; //LW
 		TestID[18] <= "19";		TestNumInst[18] <= 16'h0200;	TestAns[18] <= 16'h0e74;	TestPassed[18] <= 1'b0; //LW
 		TestID[19] <= "20";		TestNumInst[19] <= 16'h0310;	TestAns[19] <= 16'h0ebc;	TestPassed[19] <= 1'b0; //ADD
+		TestID[40] <= "40";		TestNumInst[40] <= 16'h03eb;	TestAns[40] <= 16'h0000;	TestPassed[40] <= 1'b0; //BRANCH
 
 		TestID[20] <= "21";		TestNumInst[20] <= 16'h0420;	TestAns[20] <= 16'h0e54;	TestPassed[20] <= 1'b0; //SW
 		TestID[21] <= "22";		TestNumInst[21] <= 16'h0520;	TestAns[21] <= 16'h0010;	TestPassed[21] <= 1'b0; //LW
