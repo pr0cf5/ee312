@@ -322,7 +322,7 @@ module RISCV_TOP (
 	forwardUnit FW(.EX_rs1(rs1_ex), .EX_rs2(rs2_ex), .MEM_rs2(rs2_mem), .MEM_rd(rd_mem), .WB_rd(rd_wb), .MEM_writeToReg(isItype_mem | isRtype_mem | isJtype_mem), .WB_writeToReg(isItype_wb | isRtype_wb | isJtype_wb), .aluOp1(aluOp1_f), .aluOp2(aluOp2_f), .baluOp1(baluOp1_f), .baluOp2(baluOp2_f), .memOp(memOpForward));
 
 	/* LOAD stall detection unit */
-	stallDetectionUnit SD(.flush_id(flush_id), .flush_ex(flush_ex), .ID_rs1(rs1_id), .ID_rs2(rs2_id), .EX_rd(rd_ex), .EX_isLoad(opcode_ex == 7'b0000011), .ID_isRtype(isRtype_id), .ID_isBtype(isBtype_id), .stall(loadStall));
+	stallDetectionUnit SD(.flush_id(flush_id), .flush_ex(flush_ex), .ID_rs1(rs1_id), .ID_rs2(rs2_id), .EX_rd(rd_ex), .EX_isLoad(opcode_ex == 7'b0000011), .ID_isRtype(isRtype_id), .ID_isBtype(isBtype_id), .ID_isStype(isStype_id), .stall(loadStall));
 
 	ALUSrc1Mux ALUSrc1(.sig(aluOp1_ex | aluOp1_f), .regValue(regVal1_ex), .forwardMEM(aluResult_mem), .forwardWB(RF_WD), .out(aluIn1));
 	ALUSrc2Mux ALUSrc2(.sig(aluOp2_ex | aluOp2_f), .regValue(regVal2_ex), .imm(signExtendedImm), .forwardMEM(aluResult_mem), .forwardWB(RF_WD), .out(aluIn2));

@@ -7,6 +7,7 @@ module stallDetectionUnit(
 	input wire EX_isLoad,
 	input wire ID_isRtype,
 	input wire ID_isBtype,
+	input wire ID_isStype,
 	output wire stall
 );
 
