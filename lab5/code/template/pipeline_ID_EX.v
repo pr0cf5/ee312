@@ -11,6 +11,8 @@ module ID_EX(
 	input wire[2:0] aluOp1_i,
 	input wire[2:0] aluOp2_i,
 	input wire[11:0] imm_i,
+	input wire[12:0] BtypeImm_i,
+	input wire[20:0] JtypeImm_i,
 	input wire isBtype_i,
 	input wire isItype_i,
 	input wire isRtype_i,
@@ -20,7 +22,7 @@ module ID_EX(
 	input wire[6:0] opcode_i,
 	input wire[6:0] funct7_i,
 	input wire[11:0] pc_i,
-	input wire[31:0] branchPc_i,
+	input wire[31:0] btbOut_i,
 	input wire bpr_i,
 	input wire flush_i,
 	output wire[31:0] regVal1_o,
@@ -32,6 +34,8 @@ module ID_EX(
 	output wire[2:0] aluOp1_o,
 	output wire[2:0] aluOp2_o,
 	output wire[11:0] imm_o,
+	output wire[12:0] BtypeImm_o,
+	output wire[20:0] JtypeImm_o,
 	output wire isBtype_o,
 	output wire isItype_o,
 	output wire isRtype_o,
@@ -41,7 +45,7 @@ module ID_EX(
 	output wire[6:0] opcode_o,
 	output wire[6:0] funct7_o,
 	output wire[11:0] pc_o,
-	output wire[31:0] branchPc_o,
+	output wire[31:0] btbOut_o,
 	output wire bpr_o,
 	output wire flush_o
 );
@@ -55,6 +59,8 @@ module ID_EX(
 	reg[2:0] aluOp1_r;
 	reg[2:0] aluOp2_r;
 	reg[11:0] imm_r;
+	reg[12:0] BtypeImm_r;
+	reg[20:0] JtypeImm_r;
 	reg isBtype_r;
 	reg isItype_r;
 	reg isRtype_r;
@@ -64,7 +70,7 @@ module ID_EX(
 	reg[6:0] opcode_r;
 	reg[6:0] funct7_r;
 	reg[11:0] pc_r;
-	reg[31:0] branchPc_r;
+	reg[31:0] btbOut_r;
 	reg bpr_r;
 	reg flush_r;
 
@@ -77,6 +83,8 @@ module ID_EX(
 	assign aluOp1_o = aluOp1_r;
 	assign aluOp2_o = aluOp2_r;
 	assign imm_o = imm_r;
+	assign BtypeImm_o = BtypeImm_r;
+	assign JtypeImm_o = JtypeImm_r;
 	assign isBtype_o = flush_r ? 1'b0 : isBtype_r;
 	assign isItype_o = flush_r ? 1'b0 : isItype_r;
 	assign isRtype_o = flush_r ? 1'b0 : isRtype_r;
@@ -86,7 +94,7 @@ module ID_EX(
 	assign opcode_o = opcode_r;
 	assign funct7_o = funct7_r;
 	assign pc_o = pc_r;
-	assign branchPc_o = branchPc_r;
+	assign btbOut_o = btbOut_r;
 	assign bpr_o = bpr_r;
 	assign flush_o = flush_r;
 
@@ -102,6 +110,8 @@ module ID_EX(
 			aluOp1_r <= aluOp1_i;
 			aluOp2_r <= aluOp2_i;
 			imm_r <= imm_i;
+			BtypeImm_r <= BtypeImm_i;
+			JtypeImm_r <= JtypeImm_i;
 			isBtype_r <= isBtype_i;
 			isItype_r <= isItype_i;
 			isRtype_r <= isRtype_i;
@@ -111,7 +121,7 @@ module ID_EX(
 			opcode_r <= opcode_i;
 			funct7_r <= funct7_i;
 			pc_r <= pc_i;
-			branchPc_r <= branchPc_i;
+			btbOut_r <= btbOut_i;
 			bpr_r <= bpr_i;
 			flush_r <= flush_i;
 		end

@@ -8,8 +8,8 @@ module pcMux (
 	input wire [31:0] nextPcJALR,
 	input wire [31:0] nextPcJAL,
 	input wire [31:0] nextPcBranch,
-	input wire [31:0] branchPc_ex,
-	input wire [2:0] pcSrc,
+	input wire [31:0] nextPcBTB,
+	input wire [1:0] pcSrc,
 	output wire [11:0] nextPc
 	);
 
@@ -17,20 +17,25 @@ module pcMux (
 	assign nextPc = nextPc_r[11:0];
 
 	always @(*) begin
+
 		if (mispredicted) begin
 
 			// JALR
-			if (opcode_ex == 7'b1100111 & (~flush_ex)) begin
+			if (opcode_ex == 7'b1100111 && (~flush_ex)) begin
 				nextPc_r = nextPcJALR;
 			end
 
+			// JAL
+			else if (opcode_ex == 7'b1101111 && (~flush_ex)) begin
+				nextPc_r = nextPcJAL;
+			end
+
 			// BRANCH
-			else if (opcode_ex == 7'b1100011) begin
+			else if (opcode_ex == 7'b1100011 && (~flush_ex)) begin
 				if (baluResult) begin
-					nextPc_r = branchPc_ex;
+					nextPc_r = nextPcBranch;
 				end
 				else begin
-
 					nextPc_r = recover_pc + 4;
 				end
 			end
@@ -38,20 +43,27 @@ module pcMux (
 
 		else begin
 			case (pcSrc)
-				3'b000: begin
+
+				// bit0: set this bit if it came from BTB
+				// bit1: set if it is a control instruction
+
+				2'b00: begin
 					nextPc_r = nextPcInc4;
-					//$display("default");
 				end
-				3'b001: begin
-					nextPc_r = nextPcBranch;
-					//$display("branch");
-				end
-				3'b110: begin
-					nextPc_r = nextPcJAL;
-					//$display("JUMP IMM");
-				end
-				3'b100: begin
+
+				// should be unreachable
+				2'b01: begin
 					nextPc_r = nextPcInc4;
+				end
+
+				// 'wasted' instruction
+				2'b10: begin
+					nextPc_r = nextPcInc4;
+				end
+
+				// from BTB
+				2'b11: begin
+					nextPc_r = nextPcBTB;
 				end
 			endcase
 		end

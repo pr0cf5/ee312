@@ -9,6 +9,8 @@ module IF_ID(
 	input wire[2:0] aluOp1_i,
 	input wire[2:0] aluOp2_i,
 	input wire[11:0] imm_i,
+	input wire[12:0] BtypeImm_i,
+	input wire[20:0] JtypeImm_i,
 	input wire isBtype_i,
 	input wire isItype_i,
 	input wire isRtype_i,
@@ -18,8 +20,8 @@ module IF_ID(
 	input wire[6:0] opcode_i,
 	input wire[6:0] funct7_i,
 	input wire[11:0] pc_i,
-	input wire[31:0] branchPc_i,
 	input wire bpr_i,
+	input wire[31:0] btbOut_i,
 	input wire flush_i,
 	output wire[2:0] opType_o,
 	output wire[4:0] rd_o,
@@ -28,6 +30,8 @@ module IF_ID(
 	output wire[2:0] aluOp1_o,
 	output wire[2:0] aluOp2_o,
 	output wire[11:0] imm_o,
+	output wire[12:0] BtypeImm_o,
+	output wire[20:0] JtypeImm_o,
 	output wire isBtype_o,
 	output wire isItype_o,
 	output wire isRtype_o,
@@ -37,8 +41,8 @@ module IF_ID(
 	output wire[6:0] opcode_o,
 	output wire[6:0] funct7_o,
 	output wire[11:0] pc_o,
-	output wire[31:0] branchPc_o,
 	output wire bpr_o,
+	output wire[31:0] btbOut_o,
 	output wire flush_o
 );
 
@@ -49,6 +53,8 @@ module IF_ID(
 	reg[2:0] aluOp1_r;
 	reg[2:0] aluOp2_r;
 	reg[11:0] imm_r;
+	reg[12:0] BtypeImm_r;
+	reg[20:0] JtypeImm_r;
 	reg isBtype_r;
 	reg isItype_r;
 	reg isRtype_r;
@@ -58,8 +64,8 @@ module IF_ID(
 	reg[6:0] opcode_r;
 	reg[6:0] funct7_r;
 	reg[11:0] pc_r;
-	reg[31:0] branchPc_r;
 	reg bpr_r;
+	reg[31:0] btbOut_r;
 	reg flush_r;
 
 	assign opType_o = opType_r;
@@ -69,6 +75,8 @@ module IF_ID(
 	assign aluOp1_o = aluOp1_r;
 	assign aluOp2_o = aluOp2_r;
 	assign imm_o = imm_r;
+	assign BtypeImm_o = BtypeImm_r;
+	assign JtypeImm_o = JtypeImm_r;
 	assign isBtype_o = flush_r ? 1'b0 : isBtype_r;
 	assign isItype_o = flush_r ? 1'b0 : isItype_r;
 	assign isRtype_o = flush_r ? 1'b0 : isRtype_r;
@@ -78,8 +86,8 @@ module IF_ID(
 	assign opcode_o = opcode_r;
 	assign funct7_o = funct7_r;
 	assign pc_o = pc_r;
-	assign branchPc_o = branchPc_r;
 	assign bpr_o = bpr_r;
+	assign btbOut_o = btbOut_r;
 	assign flush_o = flush_r;
 	
 
@@ -93,6 +101,8 @@ module IF_ID(
 			aluOp1_r <= aluOp1_i;
 			aluOp2_r <= aluOp2_i;
 			imm_r <= imm_i;
+			BtypeImm_r <= BtypeImm_i;
+			JtypeImm_r <= JtypeImm_i;
 			isBtype_r <= isBtype_i;
 			isItype_r <= isItype_i;
 			isRtype_r <= isRtype_i;
@@ -102,8 +112,8 @@ module IF_ID(
 			opcode_r <= opcode_i;
 			funct7_r <= funct7_i;
 			pc_r <= pc_i;
-			branchPc_r <= branchPc_i;
 			bpr_r <= bpr_i;
+			btbOut_r <= btbOut_i;
 			flush_r <= flush_i;
 		end
 	end

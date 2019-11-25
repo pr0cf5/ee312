@@ -92,12 +92,13 @@ module RISCV_TOP (
 	end
 
 	// pc Mux control
-	wire [2:0] pcSrc;
+	wire [1:0] pcSrc;
 
 	reg [31:0] RF_WD_r;
 	assign RF_WD = RF_WD_r;
 	wire branchTaken;
 	wire loadStall;
+	wire bpr;
 
 	// synchronize with clock and change pc
 
@@ -118,23 +119,12 @@ module RISCV_TOP (
 
 	// pc change using pcMux
 	wire [31:0] nextPcJAL;
-	wire [31:0] nextPcJALR;
 	wire [31:0] nextPcBranch;
+	wire [31:0] nextPcBTB;
 	wire [31:0] nextPcInc4;
-
-	// The four 'candidates' for the next pc
-
-	wire[31:0] signExtendedBtypeImm;
-	wire[31:0] signExtendedJtypeImm;
-
-	SignExtender13 SE2(.in(BtypeImm), .out(signExtendedBtypeImm));
-	SignExtender21 SE3(.in(JtypeImm), .out(signExtendedJtypeImm));
+	wire btbHit;
 
 	adder32 pcAdder1(.src1({20'b0, pc}), .src2(4), .out(nextPcInc4));
-	adder32 pcAdder2(.src1({20'b0, pc}), .src2(signExtendedJtypeImm), .out(nextPcJAL));
-	adder32 pcAdder3(.src1({20'b0, pc}), .src2(signExtendedBtypeImm), .out(nextPcBranch));
-	
-	wire bpr = 1'b0;
 
 	// Decode current instruction
 	Decoder decoder(.instruction(I_MEM_DI), .opcode(opcode), .rs1(rs1), .rs2(rs2), .rd(rd), .writeToReg(writeToReg), .writeToMem(writeToMem), .isRtype(isRtype), .isItype(isItype), .isStype(isStype), .isBtype(isBtype), .isUtype(isUtype), .isJtype(isJtype), .isALU (isALU), .ItypeImm(ItypeImm), .StypeImm(StypeImm), .BtypeImm(BtypeImm), .UtypeImm(UtypeImm), .JtypeImm(JtypeImm), .funct3(funct3), .funct7(funct7), .halt(probablyHalt), .pcSrc(pcSrc));
@@ -149,6 +139,8 @@ module RISCV_TOP (
 	wire[2:0] aluOp1_id;
 	wire[2:0] aluOp2_id;
 	wire[11:0] imm_id;
+	wire[12:0] BtypeImm_id;
+	wire[20:0] JtypeImm_id;
 	wire isBtype_id;
 	wire isItype_id;
 	wire isRtype_id;
@@ -158,7 +150,7 @@ module RISCV_TOP (
 	wire[6:0] opcode_id;
 	wire[6:0] funct7_id;
 	wire[11:0] pc_id;
-	wire[31:0] branchPc_id;
+	wire[31:0] btbOut_id;
 	wire bpr_id;
 	wire flush_id;
 	
@@ -172,9 +164,9 @@ module RISCV_TOP (
 	wire mispred_flush;
 	wire mispredicted;
 
-	assign mispred_flush = mispredicted ? 1: 0;
+	assign mispred_flush = mispredicted;
 
-	IF_ID PR1(.CLK(CLK), .RSTn(RSTn), .latchn(loadStall), .opType_i(opType), .rd_i(rd), .rs1_i(rs1), .rs2_i(rs2), .aluOp1_i(aluOp1), .aluOp2_i(aluOp2), .imm_i(imm), .isBtype_i(isBtype), .isItype_i(isItype), .isRtype_i(isRtype), .isStype_i(isStype), .isJtype_i(isJtype), .probablyHalt_i(probablyHalt), .opcode_i(opcode), .funct7_i(funct7), .pc_i(pc), .branchPc_i(nextPcBranch), .bpr_i(bpr), .flush_i(mispred_flush), .opType_o(opType_id), .rd_o(rd_id), .rs1_o(rs1_id), .rs2_o(rs2_id), .aluOp1_o(aluOp1_id), .aluOp2_o(aluOp2_id), .imm_o(imm_id), .isBtype_o(isBtype_id), .isItype_o(isItype_id), .isRtype_o(isRtype_id), .isStype_o(isStype_id), .isJtype_o(isJtype_id), .probablyHalt_o(probablyHalt_id), .opcode_o(opcode_id), .funct7_o(funct7_id), .pc_o(pc_id), .branchPc_o(branchPc_id), .bpr_o(bpr_id), .flush_o(flush_id));
+	IF_ID PR1(.CLK(CLK), .RSTn(RSTn), .latchn(loadStall), .opType_i(opType), .rd_i(rd), .rs1_i(rs1), .rs2_i(rs2), .aluOp1_i(aluOp1), .aluOp2_i(aluOp2), .imm_i(imm), .BtypeImm_i(BtypeImm), .JtypeImm_i(JtypeImm), .isBtype_i(isBtype), .isItype_i(isItype), .isRtype_i(isRtype), .isStype_i(isStype), .isJtype_i(isJtype), .probablyHalt_i(probablyHalt), .opcode_i(opcode), .funct7_i(funct7), .pc_i(pc), .bpr_i(bpr), .btbOut_i(nextPcBTB), .flush_i(mispred_flush), .opType_o(opType_id), .rd_o(rd_id), .rs1_o(rs1_id), .rs2_o(rs2_id), .aluOp1_o(aluOp1_id), .aluOp2_o(aluOp2_id), .imm_o(imm_id), .BtypeImm_o(BtypeImm_id), .JtypeImm_o(JtypeImm_id), .isBtype_o(isBtype_id), .isItype_o(isItype_id), .isRtype_o(isRtype_id), .isStype_o(isStype_id), .isJtype_o(isJtype_id), .probablyHalt_o(probablyHalt_id), .opcode_o(opcode_id), .funct7_o(funct7_id), .pc_o(pc_id), .bpr_o(bpr_id), .btbOut_o(btbOut_id), .flush_o(flush_id));
 
 	// register file control
 	assign RF_RA1 = rs1_id;
@@ -189,6 +181,8 @@ module RISCV_TOP (
 	wire[2:0] aluOp1_ex;
 	wire[2:0] aluOp2_ex;
 	wire[11:0] imm_ex;
+	wire[12:0] BtypeImm_ex;
+	wire[20:0] JtypeImm_ex;
 	wire isBtype_ex;
 	wire isItype_ex;
 	wire isRtype_ex;
@@ -198,12 +192,12 @@ module RISCV_TOP (
 	wire[6:0] opcode_ex;
 	wire[6:0] funct7_ex;
 	wire[11:0] pc_ex;
-	wire[31:0] branchPc_ex;
+	wire[31:0] btbOut_ex;
 	wire bpr_ex;
 	wire flush_ex;
 
 	// ID_EX pipeline register commit
-	ID_EX PR2(.CLK(CLK), .RSTn(RSTn), .latchn(1'b0), .regVal1_i(RF_RD1), .regVal2_i(RF_RD2), .opType_i(opType_id), .rd_i(rd_id), .rs1_i(rs1_id), .rs2_i(rs2_id), .aluOp1_i(aluOp1_id), .aluOp2_i(aluOp2_id), .imm_i(imm_id), .isBtype_i(isBtype_id), .isItype_i(isItype_id), .isRtype_i(isRtype_id), .isStype_i(isStype_id), .isJtype_i(isJtype_id), .probablyHalt_i(probablyHalt_id), .opcode_i(opcode_id), .funct7_i(funct7_id), .pc_i(pc_id), .branchPc_i(branchPc_id), .bpr_i(bpr_id), .flush_i(flush_id | mispred_flush | loadStall), .regVal1_o(regVal1_ex), .regVal2_o(regVal2_ex), .opType_o(opType_ex), .rd_o(rd_ex), .rs1_o(rs1_ex), .rs2_o(rs2_ex), .aluOp1_o(aluOp1_ex), .aluOp2_o(aluOp2_ex), .imm_o(imm_ex), .isBtype_o(isBtype_ex), .isItype_o(isItype_ex), .isRtype_o(isRtype_ex), .isStype_o(isStype_ex), .isJtype_o(isJtype_ex), .probablyHalt_o(probablyHalt_ex), .opcode_o(opcode_ex), .funct7_o(funct7_ex), .pc_o(pc_ex), .branchPc_o(branchPc_ex), .bpr_o(bpr_ex), .flush_o(flush_ex));
+	ID_EX PR2(.CLK(CLK), .RSTn(RSTn), .latchn(1'b0), .regVal1_i(RF_RD1), .regVal2_i(RF_RD2), .opType_i(opType_id), .rd_i(rd_id), .rs1_i(rs1_id), .rs2_i(rs2_id), .aluOp1_i(aluOp1_id), .aluOp2_i(aluOp2_id), .imm_i(imm_id), .BtypeImm_i(BtypeImm_id), .JtypeImm_i(JtypeImm_id), .isBtype_i(isBtype_id), .isItype_i(isItype_id), .isRtype_i(isRtype_id), .isStype_i(isStype_id), .isJtype_i(isJtype_id), .probablyHalt_i(probablyHalt_id), .opcode_i(opcode_id), .funct7_i(funct7_id), .pc_i(pc_id), .bpr_i(bpr_id), .btbOut_i(btbOut_id), .flush_i(flush_id | mispred_flush | loadStall), .regVal1_o(regVal1_ex), .regVal2_o(regVal2_ex), .opType_o(opType_ex), .rd_o(rd_ex), .rs1_o(rs1_ex), .rs2_o(rs2_ex), .aluOp1_o(aluOp1_ex), .aluOp2_o(aluOp2_ex), .imm_o(imm_ex), .BtypeImm_o(BtypeImm_ex), .JtypeImm_o(JtypeImm_ex), .isBtype_o(isBtype_ex), .isItype_o(isItype_ex), .isRtype_o(isRtype_ex), .isStype_o(isStype_ex), .isJtype_o(isJtype_ex), .probablyHalt_o(probablyHalt_ex), .opcode_o(opcode_ex), .funct7_o(funct7_ex), .pc_o(pc_ex), .bpr_o(bpr_ex), .btbOut_o(btbOut_ex), .flush_o(flush_ex));
 
 	/* EX Stage */
 
@@ -222,10 +216,20 @@ module RISCV_TOP (
 
 	// Sign Extension
 	wire[31:0] signExtendedImm;
+	wire[31:0] signExtendedBtypeImm;
+	wire[31:0] signExtendedJtypeImm;
+
 	SignExtender12 SE1(.in(imm_ex), .out(signExtendedImm));
+	SignExtender13 SE2(.in(BtypeImm_ex), .out(signExtendedBtypeImm));
+	SignExtender21 SE3(.in(JtypeImm_ex), .out(signExtendedJtypeImm));
 
 	ALU alu(.opType(opType_ex), .aux(funct7_ex), .useAux(isRtype_ex), .in1(aluIn1), .in2(aluIn2), .out(aluResult));
 	branchALU branchALU(.src1(baluIn1), .src2(baluIn2), .funct3(opType_ex), .isBtype(isBtype_ex), .out(baluResult));
+
+	adder32 JALAdder(.src1({20'b0, pc_ex}), .src2(signExtendedJtypeImm), .out(nextPcJAL));
+	adder32 BranchAdde(.src1({20'b0, pc_ex}), .src2(signExtendedBtypeImm), .out(nextPcBranch));
+
+	// Get JAL branch address
 
 	wire[31:0] aluResult_mem;
 	wire baluResult_mem;
@@ -332,8 +336,18 @@ module RISCV_TOP (
 	BALUSrcMux BALUSrc2(.sig(baluOp2_f), .regValue(regVal2_ex), .forwardMEM(aluResult_mem), .forwardWB(RF_WD), .out(baluIn2));
 
 	// control path
-	pcMux pcMux(.opcode_ex(opcode_ex), .flush_ex(flush_ex), .mispredicted(mispredicted), .baluResult(baluResult), .recover_pc({20'b0, pc_ex}), .nextPcInc4(nextPcInc4), .nextPcJALR(aluResult), .nextPcJAL(nextPcJAL), .nextPcBranch(nextPcBranch), .pcSrc({pcSrc[2:1], bpr & isBtype}), .branchPc_ex(branchPc_ex), .nextPc(nextpc));
+
+	SatPredictor Predictor(.CLK(CLK), .commit(isBtype_ex), .baluResult(baluResult), .out(bpr));
+
+	pcMux pcMux(.opcode_ex(opcode_ex), .flush_ex(flush_ex), .mispredicted(mispredicted), .baluResult(baluResult), .recover_pc({20'b0, pc_ex}), .nextPcInc4(nextPcInc4), .nextPcJALR(aluResult), .nextPcJAL(nextPcJAL), .nextPcBranch(nextPcBranch), .nextPcBTB(nextPcBTB), .pcSrc({pcSrc[1], btbHit & isBtype & bpr}), .nextPc(nextpc));
+
+	BTB BTB(.CLK(CLK), .hash_r(pc[5:0]), .tag_r(pc[11:6]), .hash_w(pc_ex[5:0]), .tag_w(pc_ex[11:6]), .dest_w(nextPcBranch), .commit(isBtype_ex), .found(btbHit), .btbOut(nextPcBTB));
 
 	// flush instructions (IF/ID, ID/EX)
-	mispredictionDetectionUnit MDU (.flush_ex(flush_ex), .opcode_ex(opcode_ex), .bpr_ex(bpr_ex), .baluResult(baluResult), .mispredicted(mispredicted));
+	mispredictionDetectionUnit MDU (.flush_ex(flush_ex), .opcode_ex(opcode_ex), .branchTarget_BTB(btbOut_ex), .branchTarget_real(nextPcBranch), .bpr_ex(bpr_ex), .baluResult(baluResult), .mispredicted(mispredicted));
+
+	always @(posedge CLK) begin
+		$display("pc?: %0x", pc+'h10148);
+	end
+
 endmodule //

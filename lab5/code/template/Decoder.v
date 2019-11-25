@@ -21,10 +21,10 @@ module Decoder (
 	output wire[2:0] funct3,
 	output wire[6:0] funct7,
 	output wire halt,
-	output wire [2:0] pcSrc
+	output wire [1:0] pcSrc
 	);
 
-	reg [2:0] pcSrc_r;
+	reg [1:0] pcSrc_r;
 	assign pcSrc = pcSrc_r;
 
 	assign opcode = instruction[6:0];
@@ -63,22 +63,22 @@ module Decoder (
 
 			// JAL 
 			7'b1101111: begin
-				pcSrc_r = 3'b110;
+				pcSrc_r = 2'b10;
 			end
 
 			// JALR
 			7'b1100111: begin
-				pcSrc_r = 3'b100;
+				pcSrc_r = 2'b10;
 			end
 
 			// Branch
 			7'b1100011: begin
-				pcSrc_r = 3'b001;
+				pcSrc_r = 2'b10;
 			end
 
 			// all else
 			default: begin
-				pcSrc_r = 3'b000;
+				pcSrc_r = 2'b00;
 			end
 		endcase
 	end
