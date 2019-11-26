@@ -6,7 +6,7 @@ module SatPredictor (
 );
 	
 	// each entry is 2 bit
-	reg [1:0] Buffer [3:0];
+	reg [1:0] Buffer [15:0];
 	reg [31:0] index;
 	reg bpr_r;
 

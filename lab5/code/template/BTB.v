@@ -11,7 +11,7 @@ module BTB (
 );
 	
 	// each entry is 12(11:0) (btbOut) + 1(12) (validBit) + 5(17:13) (tag) = 18 bits
-	reg [17:0] Buffer [5:0];
+	reg [17:0] Buffer [31:0];
 	reg [31:0] index;
 
 	initial begin

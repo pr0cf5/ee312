@@ -166,7 +166,7 @@ module RISCV_TOP (
 
 	assign mispred_flush = mispredicted;
 
-	IF_ID PR1(.CLK(CLK), .RSTn(RSTn), .latchn(loadStall), .opType_i(opType), .rd_i(rd), .rs1_i(rs1), .rs2_i(rs2), .aluOp1_i(aluOp1), .aluOp2_i(aluOp2), .imm_i(imm), .BtypeImm_i(BtypeImm), .JtypeImm_i(JtypeImm), .isBtype_i(isBtype), .isItype_i(isItype), .isRtype_i(isRtype), .isStype_i(isStype), .isJtype_i(isJtype), .probablyHalt_i(probablyHalt), .opcode_i(opcode), .funct7_i(funct7), .pc_i(pc), .bpr_i(bpr), .btbOut_i(nextPcBTB), .flush_i(mispred_flush), .opType_o(opType_id), .rd_o(rd_id), .rs1_o(rs1_id), .rs2_o(rs2_id), .aluOp1_o(aluOp1_id), .aluOp2_o(aluOp2_id), .imm_o(imm_id), .BtypeImm_o(BtypeImm_id), .JtypeImm_o(JtypeImm_id), .isBtype_o(isBtype_id), .isItype_o(isItype_id), .isRtype_o(isRtype_id), .isStype_o(isStype_id), .isJtype_o(isJtype_id), .probablyHalt_o(probablyHalt_id), .opcode_o(opcode_id), .funct7_o(funct7_id), .pc_o(pc_id), .bpr_o(bpr_id), .btbOut_o(btbOut_id), .flush_o(flush_id));
+	IF_ID PR1(.CLK(CLK), .RSTn(RSTn), .latchn(loadStall), .opType_i(opType), .rd_i(rd), .rs1_i(rs1), .rs2_i(rs2), .aluOp1_i(aluOp1), .aluOp2_i(aluOp2), .imm_i(imm), .BtypeImm_i(BtypeImm), .JtypeImm_i(JtypeImm), .isBtype_i(isBtype), .isItype_i(isItype), .isRtype_i(isRtype), .isStype_i(isStype), .isJtype_i(isJtype), .probablyHalt_i(probablyHalt), .opcode_i(opcode), .funct7_i(funct7), .pc_i(pc), .bpr_i(bpr & isBtype & btbHit), .btbOut_i(nextPcBTB), .flush_i(mispred_flush), .opType_o(opType_id), .rd_o(rd_id), .rs1_o(rs1_id), .rs2_o(rs2_id), .aluOp1_o(aluOp1_id), .aluOp2_o(aluOp2_id), .imm_o(imm_id), .BtypeImm_o(BtypeImm_id), .JtypeImm_o(JtypeImm_id), .isBtype_o(isBtype_id), .isItype_o(isItype_id), .isRtype_o(isRtype_id), .isStype_o(isStype_id), .isJtype_o(isJtype_id), .probablyHalt_o(probablyHalt_id), .opcode_o(opcode_id), .funct7_o(funct7_id), .pc_o(pc_id), .bpr_o(bpr_id), .btbOut_o(btbOut_id), .flush_o(flush_id));
 
 	// register file control
 	assign RF_RA1 = rs1_id;
@@ -345,9 +345,5 @@ module RISCV_TOP (
 
 	// flush instructions (IF/ID, ID/EX)
 	mispredictionDetectionUnit MDU (.flush_ex(flush_ex), .opcode_ex(opcode_ex), .branchTarget_BTB(btbOut_ex), .branchTarget_real(nextPcBranch), .bpr_ex(bpr_ex), .baluResult(baluResult), .mispredicted(mispredicted));
-
-	always @(posedge CLK) begin
-		$display("pc?: %0x", pc+'h10148);
-	end
 
 endmodule //

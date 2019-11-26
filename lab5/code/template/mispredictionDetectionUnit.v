@@ -27,12 +27,10 @@ module mispredictionDetectionUnit(
 			else if (opcode_ex == 7'b1100011) begin
 
 				if (branchTarget_BTB != branchTarget_real) begin
-					$display("%0x vs %0x", branchTarget_BTB, branchTarget_real);
 					mispredicted_r = 1;
 				end
 
 				else if (bpr_ex == baluResult) begin
-					$display("fuck yeah, %0x vs %0x", branchTarget_real, branchTarget_BTB);
 					mispredicted_r = 0;
 				end
 
