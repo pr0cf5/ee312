@@ -32,7 +32,7 @@ module SatPredictor (
 		end
 
 		else begin
-			bpr_r = 0;
+			bpr_r = 1;
 		end
 	end
 
@@ -58,7 +58,6 @@ module SatPredictor (
 			end 
 
 			GHR <= {GHR[2:0], baluResult};
-			$display("Buffer[%0b] = %0b", GHR, Buffer[GHR]);
 		end
 	end
 
