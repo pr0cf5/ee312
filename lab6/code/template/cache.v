@@ -1,23 +1,26 @@
 module cache (
 	input wire CLK,
 	input wire CSN,
+	input wire memRead,
 	input wire [11:0] CACHE_ADDR,
 	input wire CACHE_WEN,
 	input wire [3:0] CACHE_BE,
 	input wire [31:0] D_MEM_DI,
+	input wire [31:0] WRITE_DATA,
 	output wire [11:0] D_MEM_ADDR,
 	output wire D_MEM_WEN,
 	output wire [3:0] D_MEM_BE,
 	output wire [31:0] D_MEM_DOUT,
 	output wire freeze,
-	output wire [31:0] CACHE_DOUT // data out
+	output wire [31:0] CACHE_DOUT
 );
 
 	reg [31:0] outline;
 	reg [133:0] buffer[0:7];
 	reg [31:0] temp;
-	reg [2:0] idx;
-	reg hit;
+	reg [3:0] idx;
+	reg rhit;
+	reg whit;
 	reg [31:0] waitcnt;
 	
 	reg [11:0] D_MEM_ADDR_r;
@@ -26,14 +29,15 @@ module cache (
 
 	assign CACHE_DOUT = outline;
 	assign D_MEM_ADDR = D_MEM_ADDR_r;
+	assign D_MEM_DOUT = WRITE_DATA;
 	assign D_MEM_WEN = CACHE_WEN;
 	assign D_MEM_BE = CACHE_BE;
 
 	assign freeze = freeze_r;
 
 	initial begin
-		freeze_r <= 1'b0;
-		for (idx = 0; idx <= 3'b111; idx = idx + 1) begin
+		freeze_r = 1'b0;
+		for (idx = 0; idx < 4'b1000; idx = idx + 1) begin
 			buffer[idx] = 0;
 		end
 	end
@@ -48,32 +52,43 @@ module cache (
 	assign bo = CACHE_ADDR[3:2];
 	assign tag = CACHE_ADDR[11:7];
 
+
 	// asynchronous read
 	always @ (*) begin
-		// read: cache hit
-		hit = 0;
-		if (buffer[index][132:128] == tag && buffer[index][133] == 1'b1) begin
-			case(CACHE_ADDR[3:2])
-				2'b00: outline <= buffer[index][31:0];
-				2'b01: outline <= buffer[index][63:32];
-				2'b10: outline <= buffer[index][95:64];
-				2'b11: outline <= buffer[index][127:96];
-			endcase
-			hit = hit | 1'b1;
-		end
-		
-		if (hit) begin
-			freeze_r = 0;
+		if (CACHE_WEN) begin
+			if ((~CSN) && (~freeze_r) && memRead) begin
+				// read: cache hit
+				rhit = 0;
+				if (buffer[index][132:128] == tag && buffer[index][133] == 1'b1) begin
+					case(CACHE_ADDR[3:2])
+						2'b00: outline <= buffer[index][31:0];
+						2'b01: outline <= buffer[index][63:32];
+						2'b10: outline <= buffer[index][95:64];
+						2'b11: outline <= buffer[index][127:96];
+					endcase
+					rhit = rhit | 1'b1;
+				end
+				
+				if (rhit) begin
+					freeze_r = 0;
+				end
+
+				else begin
+					freeze_r = 1;
+					waitcnt = 0;
+				end
+			end
 		end
 
 		else begin
-			freeze_r = 1;
-			waitcnt = 0;
+			// write: invalidate cache
+			D_MEM_ADDR_r = CACHE_ADDR;
+			buffer[index][133] = 0;
 		end
 	end
 
 	always @(posedge CLK) begin
-		if (freeze_r) begin
+		if (freeze_r && (~CSN)) begin
 			if (waitcnt >= 0 && waitcnt < 5) begin
 				// wait
 				if (waitcnt == 1) begin
@@ -108,12 +123,16 @@ module cache (
 			else if (waitcnt == 5) begin
 				// fetch data
 				buffer[index][127:96] <= D_MEM_DI;
+				buffer[index][133] <= 1;
+				buffer[index][132:128] <= tag;
 				waitcnt <= 0;
 				freeze_r <= 0;
 			end
 		end
-
 	end
 
+
+	// cache write
+	// unimplemented
 
 endmodule
