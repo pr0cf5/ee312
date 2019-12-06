@@ -253,10 +253,18 @@ module RISCV_TOP (
 
 	/* MEM stage */
 	wire memOpForward;
-	assign D_MEM_ADDR = (aluResult_mem[11:2] << 2) & 'h3fff;
-	assign D_MEM_WEN = ~isStype_mem;
-	assign D_MEM_DOUT = memOpForward ? RF_WD : memWriteValue_mem;
-	assign D_MEM_BE = 4'b1111;
+
+	wire CACHE_WEN;
+	wire [11:0] CACHE_ADDR;
+	wire [31:0] CACHE_DOUT;
+	wire [3:0] CACHE_BE;
+
+	assign CACHE_WEN = ~isStype_mem;
+	assign CACHE_ADDR = (aluResult_mem[11:2] << 2) & 'h3fff;
+	assign CACHE_DOUT = memOpForward ? RF_WD : memWriteValue_mem;
+	assign CACHE_BE = 4'b1111;
+
+	cache L1(.CLK(CLK), .CSN(CSN), .CACHE_WEN(CACHE_WEN), .CACHE_ADDR(CACHE_ADDR), .CACHE_BE(CACHE_BE), .D_MEM_DI(D_MEM_DI), .D_MEM_ADDR(D_MEM_ADDR), .D_MEM_WEN(D_MEM_WEN), .D_MEM_BE(D_MEM_BE), .D_MEM_DOUT(D_MEM_DOUT), .freeze(freeze), .CACHE_DOUT(CACHE_DOUT));
 
 	wire[31:0] aluResult_wb;
 	wire baluResult_wb;
