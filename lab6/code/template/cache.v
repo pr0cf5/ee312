@@ -74,7 +74,7 @@ module cache (
 			else begin
 				rhit = 0;
 				freeze_r = 1;
-				stater = 0;
+				stater = 1;
 			end
 		end
 
@@ -89,7 +89,7 @@ module cache (
 	always @(posedge CLK) begin
 		// due to write allocate, waiting mechanism is same with read
 		if (freeze_r && (~CSN) && cacheAllocRead) begin
-			if (stater >= 0 && stater < 5) begin
+			if (stater >= 1 && stater < 5) begin
 				// wait
 				if (stater == 1) begin
 					// request for first address
