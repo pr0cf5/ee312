@@ -21,7 +21,8 @@ module cache (
 	reg [3:0] idx;
 	reg rhit;
 	reg whit;
-	reg [31:0] waitcnt;
+	reg [31:0] stater;
+	reg [31:0] statew;
 	
 	reg [11:0] D_MEM_ADDR_r;
 	reg [31:0] D_MEM_DOUT_r;
@@ -30,13 +31,15 @@ module cache (
 	assign CACHE_DOUT = outline;
 	assign D_MEM_ADDR = D_MEM_ADDR_r;
 	assign D_MEM_DOUT = WRITE_DATA;
-	assign D_MEM_WEN = CACHE_WEN;
+	assign D_MEM_WEN = CACHE_WEN ? 1 : (whit ? 0 : 1);
 	assign D_MEM_BE = CACHE_BE;
 
 	assign freeze = freeze_r;
 
 	initial begin
 		freeze_r = 1'b0;
+		stater = 0;
+		statew = 0;
 		for (idx = 0; idx < 4'b1000; idx = idx + 1) begin
 			buffer[idx] = 0;
 		end
@@ -52,87 +55,157 @@ module cache (
 	assign bo = CACHE_ADDR[3:2];
 	assign tag = CACHE_ADDR[11:7];
 
-
 	// asynchronous read
 	always @ (*) begin
-		if (CACHE_WEN) begin
-			if ((~CSN) && (~freeze_r) && memRead) begin
-				// read: cache hit
-				rhit = 0;
-				if (buffer[index][132:128] == tag && buffer[index][133] == 1'b1) begin
-					case(CACHE_ADDR[3:2])
-						2'b00: outline <= buffer[index][31:0];
-						2'b01: outline <= buffer[index][63:32];
-						2'b10: outline <= buffer[index][95:64];
-						2'b11: outline <= buffer[index][127:96];
-					endcase
-					rhit = rhit | 1'b1;
-				end
-				
-				if (rhit) begin
-					freeze_r = 0;
-				end
+		if (CACHE_WEN && memRead && (~CSN) && (~freeze_r)) begin
+			// read: cache hit
 
-				else begin
-					freeze_r = 1;
-					waitcnt = 0;
-				end
+			if (buffer[index][132:128] == tag && buffer[index][133] == 1'b1) begin
+				case(CACHE_ADDR[3:2])
+					2'b00: outline <= buffer[index][31:0];
+					2'b01: outline <= buffer[index][63:32];
+					2'b10: outline <= buffer[index][95:64];
+					2'b11: outline <= buffer[index][127:96];
+				endcase
+				rhit = 1'b1;
+				freeze_r = 0;
+			end
+
+			else begin
+				rhit = 0;
+				freeze_r = 1;
+				stater = 0;
 			end
 		end
 
-		else begin
-			// write: invalidate cache
-			D_MEM_ADDR_r = CACHE_ADDR;
-			buffer[index][133] = 0;
+		else if (~memRead && CACHE_WEN) begin
+			freeze_r = 0;
 		end
 	end
 
+	wire cacheAllocRead;
+	assign cacheAllocRead = memRead && (~rhit);
+
 	always @(posedge CLK) begin
-		if (freeze_r && (~CSN)) begin
-			if (waitcnt >= 0 && waitcnt < 5) begin
+		// due to write allocate, waiting mechanism is same with read
+		if (freeze_r && (~CSN) && cacheAllocRead) begin
+			if (stater >= 0 && stater < 5) begin
 				// wait
-				if (waitcnt == 1) begin
+				if (stater == 1) begin
 					// request for first address
 					D_MEM_ADDR_r <= CACHE_ADDR[11:4] << 4;
 				end
 
-				else if (waitcnt == 2) begin
+				else if (stater == 2) begin
 					// fetch data
 					buffer[index][31:0] <= D_MEM_DI;
 					// request for second address
 					D_MEM_ADDR_r <= (CACHE_ADDR[11:4] << 4) + 4'b0100;
 				end
 
-				else if (waitcnt == 3) begin
+				else if (stater == 3) begin
 					// fetch data
 					buffer[index][63:32] <= D_MEM_DI;
 					// request for second address
 					D_MEM_ADDR_r <= (CACHE_ADDR[11:4] << 4) + 4'b1000;
 				end
 
-				else if (waitcnt == 4) begin
+				else if (stater == 4) begin
+					// fetch data
+					buffer[index][95:64] <= D_MEM_DI;
+					// request for second address
+					D_MEM_ADDR_r <= (CACHE_ADDR[11:4] << 4) + 4'b1100;
+				end
+				stater <= stater + 1;
+			end
+
+			else if (stater == 5) begin
+				// fetch data
+				buffer[index][127:96] <= D_MEM_DI;
+				buffer[index][133] <= 1;
+				buffer[index][132:128] <= tag;
+				stater <= 0;
+				freeze_r <= 0;
+			end
+		end
+	end
+
+	always @(*) begin
+		// on cache hit, write to cache and memory and unfreeze
+		if (~CACHE_WEN) begin
+			if (statew == 0) begin
+				if (buffer[index][132:128] == tag && buffer[index][133] == 1'b1) begin
+					whit = 1'b1;
+					freeze_r = 0;
+				end
+
+				// go to freeze
+				else begin
+					whit = 0;
+					freeze_r = 1;
+					statew = 1;
+				end
+
+				D_MEM_ADDR_r = CACHE_ADDR;
+			end
+		end
+	end
+
+	always @(negedge CLK) begin
+		if (~CACHE_WEN && whit && statew == 0) begin
+			case(CACHE_ADDR[3:2])
+				2'b00: buffer[index][31:0] <= WRITE_DATA;
+				2'b01: buffer[index][63:32] <= WRITE_DATA;
+				2'b10: buffer[index][95:64] <= WRITE_DATA;
+				2'b11: buffer[index][127:96] <= WRITE_DATA;
+			endcase
+		end 
+	end
+
+	wire cacheAllocWrite;
+	assign cacheAllocWrite = (~CACHE_WEN) && (~whit);
+
+	always @(posedge CLK) begin
+
+		if (freeze_r && (~CSN) && cacheAllocWrite) begin
+			if (statew >= 1 && statew < 5) begin
+				if (statew == 1) begin
+					// request for first address
+					D_MEM_ADDR_r <= CACHE_ADDR[11:4] << 4;
+				end
+
+				else if (statew == 2) begin
+					// fetch data
+					buffer[index][31:0] <= D_MEM_DI;
+					// request for second address
+					D_MEM_ADDR_r <= (CACHE_ADDR[11:4] << 4) + 4'b0100;
+				end
+
+				else if (statew == 3) begin
+					// fetch data
+					buffer[index][63:32] <= D_MEM_DI;
+					// request for second address
+					D_MEM_ADDR_r <= (CACHE_ADDR[11:4] << 4) + 4'b1000;
+				end
+
+				else if (statew == 4) begin
 					// fetch data
 					buffer[index][95:64] <= D_MEM_DI;
 					// request for second address
 					D_MEM_ADDR_r <= (CACHE_ADDR[11:4] << 4) + 4'b1100;
 				end
 
-				waitcnt <= waitcnt + 1;
+				statew <= statew + 1;
 			end
 
-			else if (waitcnt == 5) begin
+			else if (statew == 5) begin
 				// fetch data
 				buffer[index][127:96] <= D_MEM_DI;
 				buffer[index][133] <= 1;
 				buffer[index][132:128] <= tag;
-				waitcnt <= 0;
-				freeze_r <= 0;
+				statew <= 0;
 			end
 		end
 	end
-
-
-	// cache write
-	// unimplemented
 
 endmodule
